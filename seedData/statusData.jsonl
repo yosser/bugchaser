@@ -1,0 +1,6 @@
+{ "name": "Open",   "value": 1}
+{"name": "In Progress",   "value": 2}
+{"name": "In Review",   "value": 3}
+{"name": "Done",   "value": 4}
+{"name": "Won't Fix",   "value": 5}
+{"name": "Accepted",   "value": 6}

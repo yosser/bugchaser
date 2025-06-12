@@ -1,0 +1,5 @@
+{"name": "Trivial",   "value": 1}
+{"name": "Minor",   "value": 2}
+{"name": "Major",   "value": 3}
+{"name": "Blocker",   "value": 4}
+{ "name": "Critical",   "value": 5}
