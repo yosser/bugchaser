@@ -1,24 +1,28 @@
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
+import { UserContext } from "../../../context/userContext";
+import type { IUserContext } from "../../../context/userContext";
 
 interface AddBugProps {
     onClose: () => void;
 }
 
 export const AddBug = ({ onClose }: AddBugProps) => {
+    const { currentUser } = useContext<IUserContext>(UserContext);
     const users = useQuery(api.users.get);
     const statuses = useQuery(api.status.get);
     const priorities = useQuery(api.priority.get);
     const createBug = useMutation(api.bugs.create);
+    const createLog = useMutation(api.logs.create);
     const [formData, setFormData] = useState({
         title: "",
         description: "",
-        status: "" as Id<"status">,
-        priority: "" as Id<"priority">,
-        reporter: "" as Id<"users">,
-        assignedTo: "" as Id<"users">,
+        status: statuses?.[0]?._id ?? "" as Id<"status">,
+        priority: priorities?.[3]?._id ?? "" as Id<"priority">,
+        reporter: currentUser?._id ?? "" as Id<"users">,
+        assignedTo: currentUser?._id ?? "" as Id<"users">,
     });
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -27,7 +31,7 @@ export const AddBug = ({ onClose }: AddBugProps) => {
             return;
         }
         try {
-            await createBug({
+            const bugId = await createBug({
                 title: formData.title,
                 description: formData.description,
                 status: formData.status,
@@ -35,6 +39,13 @@ export const AddBug = ({ onClose }: AddBugProps) => {
                 reporter: formData.reporter,
                 assignedTo: formData.assignedTo,
             });
+            if (bugId) {
+                await createLog({
+                    action: "Bug created",
+                    user: currentUser?._id,
+                    bug: bugId,
+                });
+            }
             onClose();
         } catch (error) {
             console.error("Failed to create bug:", error);
@@ -47,7 +58,7 @@ export const AddBug = ({ onClose }: AddBugProps) => {
     };
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+        <div className="fixed inset-0 bg-gray-500/75 flex items-center justify-center">
             <div className="bg-white rounded-lg p-6 w-full max-w-2xl">
                 <h2 className="text-2xl font-semibold mb-4">Add Bug</h2>
                 <form onSubmit={handleSubmit} className="space-y-4">

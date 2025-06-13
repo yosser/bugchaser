@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import type { Doc } from "../../../../convex/_generated/dataModel";
+import { UserContext } from "../../../context/userContext";
+import type { IUserContext } from "../../../context/userContext";
 
 interface EditBugProps {
     bug: Doc<"bugs">;
@@ -9,6 +11,7 @@ interface EditBugProps {
 }
 
 export const EditBug = ({ bug, onClose }: EditBugProps) => {
+    const { currentUser } = useContext<IUserContext>(UserContext);
     const users = useQuery(api.users.get);
     const statuses = useQuery(api.status.get);
     const priorities = useQuery(api.priority.get);
@@ -23,6 +26,7 @@ export const EditBug = ({ bug, onClose }: EditBugProps) => {
     });
 
     const updateBug = useMutation(api.bugs.update);
+    const createLog = useMutation(api.logs.create);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -30,6 +34,11 @@ export const EditBug = ({ bug, onClose }: EditBugProps) => {
             await updateBug({
                 id: bug._id,
                 ...formData,
+            });
+            await createLog({
+                action: "Bug updated",
+                user: currentUser?._id,
+                bug: bug._id,
             });
             onClose();
         } catch (error) {
@@ -46,7 +55,7 @@ export const EditBug = ({ bug, onClose }: EditBugProps) => {
     };
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+        <div className="fixed inset-0 bg-gray-500/75 flex items-center justify-center">
             <div className="bg-white rounded-lg p-6 w-full max-w-md">
                 <h2 className="text-2xl font-semibold mb-6">Edit Bug</h2>
                 <form onSubmit={handleSubmit} className="space-y-4">

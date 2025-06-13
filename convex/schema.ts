@@ -26,9 +26,12 @@ export default defineSchema({
     name: v.string(),
     value: v.number(),
   }),
-  priorityDescription: defineTable({
-    name: v.string(),
-    description: v.string(),
+  logs: defineTable({
+    action: v.string(),
+    user: v.optional(v.id("users")),
+    bug: v.optional(v.id("bugs")),
+    comment: v.optional(v.id("comments")),
+    createdAt: v.optional(v.number()),
   }),
   bugs: defineTable({
     title: v.string(),

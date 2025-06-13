@@ -15,6 +15,7 @@ import type {
 } from "convex/server";
 import type * as bugs from "../bugs.js";
 import type * as comments from "../comments.js";
+import type * as logs from "../logs.js";
 import type * as priority from "../priority.js";
 import type * as roles from "../roles.js";
 import type * as status from "../status.js";
@@ -32,6 +33,7 @@ import type * as users from "../users.js";
 declare const fullApi: ApiFromModules<{
   bugs: typeof bugs;
   comments: typeof comments;
+  logs: typeof logs;
   priority: typeof priority;
   roles: typeof roles;
   status: typeof status;

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "convex/react";
-import { ListComments, ListUsers, ListBugs, MainNav } from "./component";
+import { ListComments, ListUsers, ListBugs, ListLogs, MainNav } from "./component";
 import { api } from "../convex/_generated/api";
 import type { Doc } from "../convex/_generated/dataModel";
 
@@ -8,8 +8,10 @@ import { UserContext } from "./context/userContext";
 
 function App() {
   const [view, setView] = useState<string>("bugs");
+
   const [currentUser, setCurrentUser] = useState<Doc<"users"> | null>(null);
   const users = useQuery(api.users.get);
+
 
   useEffect(() => {
     if (users) {
@@ -33,7 +35,7 @@ function App() {
         {view === 'bugs' && <ListBugs />}
         {view === 'users' && <ListUsers />}
         {view === 'comments' && <ListComments />}
-
+        {view === 'logs' && <ListLogs />}
       </div>
     </UserContext.Provider >
   );

@@ -12,9 +12,11 @@ interface ListCommentsProps {
 
 export const ListComments = ({ bugId }: ListCommentsProps) => {
     const comments = useQuery(api.comments.get);
+    const bugs = useQuery(api.bugs.get);
     const users = useQuery(api.users.get);
     const [commentToEdit, setCommentToEdit] = useState<Doc<"comments"> | null>(null);
     const [showAddComment, setShowAddComment] = useState(false);
+    const [parentComment, setParentComment] = useState<Doc<"comments"> | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [commentToDelete, setCommentToDelete] = useState<Doc<"comments"> | null>(null);
     const deleteComment = useMutation(api.comments.remove);
@@ -27,6 +29,11 @@ export const ListComments = ({ bugId }: ListCommentsProps) => {
         } catch (err) {
             setError(err instanceof Error ? err.message : "Failed to delete comment");
         }
+    };
+
+    const onShowReplyForm = (comment: Doc<"comments">) => {
+        setParentComment(comment);
+        setShowAddComment(true);
     };
 
     const bugComments = comments?.filter(comment => bugId ? comment.bug === bugId && !comment.parentComment : !comment.parentComment) || [];
@@ -63,6 +70,9 @@ export const ListComments = ({ bugId }: ListCommentsProps) => {
                                     </span>
                                     <span className="text-sm text-gray-500 ml-2">
                                         {comment.createdAt ? new Date(comment.createdAt).toLocaleString() : 'N/A'}
+                                    </span>
+                                    <span className="text-sm text-gray-500 ml-2">
+                                        {bugs?.find(bug => bug._id === comment.bug)?.title || "N/A"}
                                     </span>
                                 </div>
                                 <div className="flex space-x-2">
@@ -122,7 +132,7 @@ export const ListComments = ({ bugId }: ListCommentsProps) => {
 
                             {/* Reply button */}
                             <button
-                                onClick={() => setShowAddComment(true)}
+                                onClick={() => onShowReplyForm(comment)}
                                 className="text-sm text-blue-600 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
                             >
                                 Reply
@@ -133,7 +143,7 @@ export const ListComments = ({ bugId }: ListCommentsProps) => {
             </div>
 
             {commentToEdit && <EditComment comment={commentToEdit} onClose={() => setCommentToEdit(null)} />}
-            {showAddComment && <AddComment onClose={() => setShowAddComment(false)} bugId={bugId} />}
+            {showAddComment && <AddComment onClose={() => setShowAddComment(false)} bugId={bugId} parentComment={parentComment ?? undefined} />}
             <ConfirmationModal
                 isOpen={!!commentToDelete}
                 title="Delete Comment"

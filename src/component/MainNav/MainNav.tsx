@@ -11,6 +11,7 @@ export interface IMainNavProps {
 export const MainNav: React.FunctionComponent<IMainNavProps> = ({ setView, view }) => {
     let navNames = [{ label: 'Users', value: 'users' },
     { label: 'Bugs', value: 'bugs' },
+    { label: 'Logs', value: 'logs' },
     { label: 'Comments', value: 'comments' }];
 
     navNames = navNames.sort((a, b) => a.label.localeCompare(b.label));

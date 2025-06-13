@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import type { Doc, Id } from "../../../../convex/_generated/dataModel";
 import { AddBug } from "../add";
@@ -7,9 +7,12 @@ import { EditBug } from "../edit";
 import { ConfirmationModal } from "../../common/ConfirmationModal";
 import { BugGrid } from "../grid/BugGrid";
 import { BugList } from "./BugList";
+import { ViewBug } from "../view/ViewBug";
 type ViewMode = "grid" | "list";
 
 export const ListBugs = () => {
+    const bugs = useQuery(api.bugs.get);
+    const [showViewBug, setShowViewBug] = useState<Id<'bugs'> | null>(null);
     const [showAddBug, setShowAddBug] = useState(false);
     const [bugToEdit, setBugToEdit] = useState<Doc<"bugs"> | null>(null);
     const [bugToDelete, setBugToDelete] = useState<Doc<"bugs"> | null>(null);
@@ -28,6 +31,7 @@ export const ListBugs = () => {
     };
 
     const handleBugClick = (bug: Doc<"bugs">) => {
+        setShowViewBug(null);
         setBugToEdit(bug);
     };
 
@@ -72,14 +76,24 @@ export const ListBugs = () => {
             )}
 
             {viewMode === "grid" ? (
-                <BugGrid onBugClick={handleBugClick} />
+                <BugGrid onBugClick={handleBugClick} setShowViewBug={setShowViewBug} />
             ) : (
                 <BugList
                     onBugClick={handleBugClick}
                     onDeleteClick={setBugToDelete}
                 />
             )}
-
+            {showViewBug && bugs?.find(b => b._id === showViewBug) && (
+                <div className="fixed inset-0 bg-gray-500/75 flex items-center justify-center p-4 z-50">
+                    <div className="relative w-full max-w-4xl">
+                        <ViewBug
+                            bugId={showViewBug}
+                            onEdit={handleBugClick}
+                            onClose={() => setShowViewBug(null)}
+                        />
+                    </div>
+                </div>
+            )}
             {showAddBug && <AddBug onClose={() => setShowAddBug(false)} />}
             {bugToEdit && <EditBug bug={bugToEdit} onClose={() => setBugToEdit(null)} />}
             <ConfirmationModal

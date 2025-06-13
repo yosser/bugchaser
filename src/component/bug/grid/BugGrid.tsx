@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useContext, useState, useRef } from "react";
 
 import { useQuery, useMutation } from "convex/react";
 import { DndProvider, useDrop } from 'react-dnd';
@@ -8,8 +8,13 @@ import { api } from "../../../../convex/_generated/api";
 import type { Doc, Id } from "../../../../convex/_generated/dataModel";
 import { BugCard } from "./BugCard";
 
+import { UserContext } from "../../../context/userContext";
+import type { IUserContext } from "../../../context/userContext";
+
+
 interface BugGridProps {
     onBugClick?: (bug: Doc<"bugs">) => void;
+    setShowViewBug?: (bugId: Id<"bugs">) => void;
 }
 
 interface IAssignedToColumnProps {
@@ -17,9 +22,10 @@ interface IAssignedToColumnProps {
     bugs: Doc<"bugs">[];
     onBugEdit?: (bug: Doc<"bugs">) => void;
     onDrop: (bugId: Id<"bugs">, assignedToId: Id<"users">) => void;
+    setShowViewBug?: (bugId: Id<"bugs">) => void;
 }
 
-const AssignedToColumn = ({ assignedTo, bugs, onBugEdit, onDrop }: IAssignedToColumnProps) => {
+const AssignedToColumn = ({ assignedTo, bugs, onBugEdit, onDrop, setShowViewBug }: IAssignedToColumnProps) => {
     // const dropRef = useRef<HTMLDivElement>(null);
     const [{ isOver }, drop] = useDrop(() => ({
         accept: 'BUG',
@@ -45,6 +51,7 @@ const AssignedToColumn = ({ assignedTo, bugs, onBugEdit, onDrop }: IAssignedToCo
                         key={bug._id}
                         bug={bug}
                         onEdit={onBugEdit}
+                        setShowViewBug={setShowViewBug}
                     />
                 );
             })}
@@ -58,9 +65,10 @@ interface IPriorityColumnProps {
     bugs: Doc<"bugs">[];
     onBugEdit?: (bug: Doc<"bugs">) => void;
     onDrop: (bugId: Id<"bugs">, priorityId: Id<"priority">) => void;
+    setShowViewBug?: (bugId: Id<"bugs">) => void;
 }
 
-const PriorityColumn = ({ priority, bugs, onBugEdit, onDrop }: IPriorityColumnProps) => {
+const PriorityColumn = ({ priority, bugs, onBugEdit, onDrop, setShowViewBug }: IPriorityColumnProps) => {
     const dropRef = useRef<HTMLDivElement>(null);
     const [{ isOver }, drop] = useDrop(() => ({
         accept: 'BUG',
@@ -90,6 +98,7 @@ const PriorityColumn = ({ priority, bugs, onBugEdit, onDrop }: IPriorityColumnPr
                             key={bug._id}
                             bug={bug}
                             onEdit={onBugEdit}
+                            setShowViewBug={setShowViewBug}
                         />
                     );
                 })}
@@ -103,9 +112,10 @@ interface IStatusColumnProps {
     bugs: Doc<"bugs">[];
     onBugEdit?: (bug: Doc<"bugs">) => void;
     onDrop: (bugId: Id<"bugs">, statusId: Id<"status">) => void;
+    setShowViewBug?: (bugId: Id<"bugs">) => void;
 }
 
-const StatusColumn = ({ status, bugs, onBugEdit, onDrop }: IStatusColumnProps) => {
+const StatusColumn = ({ status, bugs, onBugEdit, onDrop, setShowViewBug }: IStatusColumnProps) => {
     const [{ isOver }, drop] = useDrop(() => ({
         accept: 'BUG',
         drop: (item: { id: Id<"bugs"> }) => {
@@ -134,6 +144,7 @@ const StatusColumn = ({ status, bugs, onBugEdit, onDrop }: IStatusColumnProps) =
                             key={bug._id}
                             bug={bug}
                             onEdit={onBugEdit}
+                            setShowViewBug={setShowViewBug}
                         />
                     );
                 })}
@@ -142,18 +153,22 @@ const StatusColumn = ({ status, bugs, onBugEdit, onDrop }: IStatusColumnProps) =
     );
 };
 
-export const BugGrid = ({ onBugClick }: BugGridProps) => {
+export const BugGrid = ({ onBugClick, setShowViewBug }: BugGridProps) => {
+    const { currentUser } = useContext<IUserContext>(UserContext);
     const [columnView, setColumnView] = useState<'status' | 'priority' | 'assignedTo'>('assignedTo');
     const bugs = useQuery(api.bugs.get);
     const users = useQuery(api.users.get);
     const statuses = useQuery(api.status.get);
     const priorities = useQuery(api.priority.get);
     const updateBug = useMutation(api.bugs.update);
+    const createLog = useMutation(api.logs.create);
 
     const handleDrop = async (bugId: Id<"bugs">, priorityId: Id<"priority">) => {
         const bug = bugs?.find(b => b._id === bugId);
-        if (!bug) return;
-
+        const priority = priorities?.find(p => p._id === priorityId);
+        if (!bug || bug.priority === priorityId) {
+            return;
+        }
         try {
             await updateBug({
                 id: bugId,
@@ -164,6 +179,13 @@ export const BugGrid = ({ onBugClick }: BugGridProps) => {
                 reporter: bug.reporter,
                 assignedTo: bug.assignedTo,
             });
+
+            await createLog({
+                action: `Bug priority changed to ${priority?.name}`,
+                user: currentUser?._id,
+                bug: bugId,
+            });
+
         } catch (error) {
             console.error('Failed to update bug priority:', error);
         }
@@ -171,7 +193,10 @@ export const BugGrid = ({ onBugClick }: BugGridProps) => {
 
     const handleDropStatus = async (bugId: Id<"bugs">, statusId: Id<"status">) => {
         const bug = bugs?.find(b => b._id === bugId);
-        if (!bug) return;
+        if (!bug || !bug.status || bug.status === statusId) {
+            return;
+        }
+        const status = statuses?.find(s => s._id === statusId);
 
         try {
             await updateBug({
@@ -183,6 +208,11 @@ export const BugGrid = ({ onBugClick }: BugGridProps) => {
                 reporter: bug.reporter,
                 assignedTo: bug.assignedTo,
             });
+            await createLog({
+                action: `Bug status changed to ${status?.name}`,
+                user: currentUser?._id,
+                bug: bugId,
+            });
         } catch (error) {
             console.error('Failed to update bug status:', error);
         }
@@ -190,7 +220,10 @@ export const BugGrid = ({ onBugClick }: BugGridProps) => {
 
     const handleDropAssignedTo = async (bugId: Id<"bugs">, assignedToId: Id<"users">) => {
         const bug = bugs?.find(b => b._id === bugId);
-        if (!bug) return;
+        if (!bug || bug.assignedTo === assignedToId) {
+            return;
+        }
+        const assignedTo = users?.find(u => u._id === assignedToId);
 
         try {
             await updateBug({
@@ -201,6 +234,11 @@ export const BugGrid = ({ onBugClick }: BugGridProps) => {
                 priority: bug.priority,
                 reporter: bug.reporter,
                 assignedTo: assignedToId,
+            });
+            await createLog({
+                action: `Bug assigned to ${assignedTo?.name}`,
+                user: currentUser?._id,
+                bug: bugId,
             });
         } catch (error) {
             console.error('Failed to update bug assigned to:', error);
@@ -256,6 +294,7 @@ export const BugGrid = ({ onBugClick }: BugGridProps) => {
                                 bugs={bugs}
                                 onBugEdit={onBugClick}
                                 onDrop={handleDropStatus}
+                                setShowViewBug={setShowViewBug}
                             />
                         ))}
                     </div>
@@ -268,6 +307,7 @@ export const BugGrid = ({ onBugClick }: BugGridProps) => {
                                 bugs={bugs}
                                 onBugEdit={onBugClick}
                                 onDrop={handleDropAssignedTo}
+                                setShowViewBug={setShowViewBug}
                             />
                         ))}
                     </div>
@@ -280,11 +320,13 @@ export const BugGrid = ({ onBugClick }: BugGridProps) => {
                                 bugs={bugs}
                                 onBugEdit={onBugClick}
                                 onDrop={handleDrop}
+                                setShowViewBug={setShowViewBug}
                             />
                         ))}
                     </div>
                 )}
             </div>
+
         </DndProvider>
     );
 }; 

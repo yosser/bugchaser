@@ -1,17 +1,17 @@
 import { useState, useContext } from "react";
 import { useMutation } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
-import type { Id } from "../../../../convex/_generated/dataModel";
+import type { Id, Doc } from "../../../../convex/_generated/dataModel";
 import { UserContext } from "../../../context/userContext";
 import type { IUserContext } from "../../../context/userContext";
 
 interface AddCommentProps {
     onClose: () => void;
     bugId?: Id<"bugs">;
-    parentCommentId?: Id<"comments">;
+    parentComment?: Doc<"comments">;
 }
 
-export const AddComment = ({ onClose, bugId, parentCommentId }: AddCommentProps) => {
+export const AddComment = ({ onClose, bugId, parentComment }: AddCommentProps) => {
     const { currentUser } = useContext<IUserContext>(UserContext);
     const createComment = useMutation(api.comments.create);
     const [formData, setFormData] = useState({
@@ -27,10 +27,10 @@ export const AddComment = ({ onClose, bugId, parentCommentId }: AddCommentProps)
         try {
             await createComment({
                 text: formData.text,
-                bug: bugId,
+                bug: bugId ?? parentComment?.bug ?? undefined,
                 user: currentUser._id,
-                parentComment: parentCommentId,
-                isReply: !!parentCommentId,
+                parentComment: parentComment ? parentComment._id : undefined,
+                isReply: !!parentComment,
             });
             onClose();
         } catch (error) {
@@ -47,15 +47,15 @@ export const AddComment = ({ onClose, bugId, parentCommentId }: AddCommentProps)
     };
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+        <div className="fixed inset-0 bg-gray-500/75 flex items-center justify-center">
             <div className="bg-white rounded-lg p-6 w-full max-w-md">
                 <h2 className="text-2xl font-semibold mb-6">
-                    {parentCommentId ? "Add Reply" : "Add Comment"}
+                    {parentComment?._id ? "Add Reply" : "Add Comment"}
                 </h2>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
                         <label htmlFor="text" className="block text-sm font-medium text-gray-700 mb-1">
-                            {parentCommentId ? "Reply" : "Comment"}
+                            {parentComment?._id ? "Reply" : "Comment"}
                         </label>
                         <textarea
                             id="text"
@@ -64,7 +64,7 @@ export const AddComment = ({ onClose, bugId, parentCommentId }: AddCommentProps)
                             onChange={handleChange}
                             rows={4}
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder={parentCommentId ? "Write your reply..." : "Write your comment..."}
+                            placeholder={parentComment?._id ? "Write your reply..." : "Write your comment..."}
                             required
                         />
                     </div>
@@ -81,7 +81,7 @@ export const AddComment = ({ onClose, bugId, parentCommentId }: AddCommentProps)
                             type="submit"
                             className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         >
-                            {parentCommentId ? "Post Reply" : "Post Comment"}
+                            {parentComment?._id ? "Post Reply" : "Post Comment"}
                         </button>
                     </div>
                 </form>
