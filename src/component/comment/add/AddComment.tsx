@@ -14,6 +14,7 @@ interface AddCommentProps {
 export const AddComment = ({ onClose, bugId, parentComment }: AddCommentProps) => {
     const { currentUser } = useContext<IUserContext>(UserContext);
     const createComment = useMutation(api.comments.create);
+    const createLog = useMutation(api.logs.create);
     const [formData, setFormData] = useState({
         text: "",
     });
@@ -25,13 +26,21 @@ export const AddComment = ({ onClose, bugId, parentComment }: AddCommentProps) =
         }
 
         try {
-            await createComment({
+            const commentId = await createComment({
                 text: formData.text,
                 bug: bugId ?? parentComment?.bug ?? undefined,
                 user: currentUser._id,
                 parentComment: parentComment ? parentComment._id : undefined,
                 isReply: !!parentComment,
             });
+            if (commentId) {
+                await createLog({
+                    action: "Comment created",
+                    user: currentUser?._id,
+                    bug: bugId,
+                    comment: commentId,
+                });
+            }
             onClose();
         } catch (error) {
             console.error("Failed to create comment:", error);

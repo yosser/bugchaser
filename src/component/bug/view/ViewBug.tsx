@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useQuery } from "convex/react";
 import type { Id, Doc } from "../../../../convex/_generated/dataModel";
 import { api } from "../../../../convex/_generated/api";
 import { DateTime } from "luxon";
+import { Comment } from "../grid/Comment";
 
 interface ViewBugProps {
     bugId: Id<"bugs">;
@@ -11,13 +12,14 @@ interface ViewBugProps {
 }
 
 export const ViewBug = ({ bugId, onEdit, onClose }: ViewBugProps) => {
-    const [bug, setBug] = useState<Doc<"bugs"> | null>(null);
-    const bugs = useQuery(api.bugs.get);
+    const bug = useQuery(api.bugs.getById, { id: bugId });
     const users = useQuery(api.users.get) ?? [];
     const statuses = useQuery(api.status.get) ?? [];
     const priorities = useQuery(api.priority.get) ?? [];
-    const comments = useQuery(api.comments.get) ?? [];
+    const comments = useQuery(api.comments.getByBug, { bugId }) ?? [];
     const logs = useQuery(api.logs.get) ?? [];
+    const bugTags = useQuery(api.bugsTags.getByBug, { bugId }) ?? [];
+    const tags = useQuery(api.tags.get) ?? [];
 
     const assignedUser = users?.find(user => user._id === bug?.assignedTo);
     const reporter = users?.find(user => user._id === bug?.reporter);
@@ -25,14 +27,6 @@ export const ViewBug = ({ bugId, onEdit, onClose }: ViewBugProps) => {
     const priority = priorities.find(p => p._id === bug?.priority);
     const [showComments, setShowComments] = useState(false);
 
-    useEffect(() => {
-        if (bugId && bugs && bugs.length > 0) {
-            const bug = bugs?.find(b => b._id === bugId);
-            if (bug) {
-                setBug(bug);
-            }
-        }
-    }, [bugId, bugs]);
 
     const getStatusColour = (statusId: Id<"status">) => {
         const statusValue = statuses.find(s => s._id === statusId)?.value;
@@ -55,22 +49,21 @@ export const ViewBug = ({ bugId, onEdit, onClose }: ViewBugProps) => {
     const getPriorityColour = (priorityId: Id<"priority">) => {
         const priorityValue = priorities.find(p => p._id === priorityId)?.value;
         switch (priorityValue) {
-            case 5:
+            case 1:
                 return 'bg-red-100 text-red-800';
-            case 4:
+            case 2:
                 return 'bg-orange-100 text-orange-800';
             case 3:
                 return 'bg-yellow-100 text-yellow-800';
-            case 2:
-                return 'bg-light-green-100 text-light-green-800';
-            case 1:
+            case 4:
                 return 'bg-green-100 text-green-800';
             default:
-                return 'bg-gray-100 text-gray-800';
+                return 'bg-gret-100 text-grey800';
         }
     };
 
-    const rootComments = comments.filter(c => c.bug === bugId && !c.parentComment && !c.isDeleted);
+    const rootComments = comments.filter(c => !c.parentComment && !c.isDeleted);
+
     const bugLogs = logs
         .filter(log => log.bug === bugId)
         .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
@@ -115,7 +108,6 @@ export const ViewBug = ({ bugId, onEdit, onClose }: ViewBugProps) => {
                 );
         }
     };
-
 
     if (!bug) {
         return null;
@@ -188,19 +180,11 @@ export const ViewBug = ({ bugId, onEdit, onClose }: ViewBugProps) => {
                         {showComments && rootComments.length > 0 && (
                             <div className="space-y-4">
                                 {rootComments.map((comment) => (
-                                    <div key={comment._id} className="bg-white rounded-lg p-4 shadow-sm">
-                                        <div className="flex justify-between items-start mb-2">
-                                            <div>
-                                                <span className="font-medium text-gray-900">
-                                                    {users.find(u => u._id === comment.user)?.name || 'Unknown User'}
-                                                </span>
-                                                <span className="text-sm text-gray-500 ml-2">
-                                                    {comment.createdAt ? DateTime.fromMillis(comment.createdAt).toRelative() : 'N/A'}
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <p className="text-gray-700">{comment.text}</p>
-                                    </div>
+                                    <Comment
+                                        key={comment._id}
+                                        comment={comment}
+                                        users={users}
+                                    />
                                 ))}
                             </div>
                         )}
@@ -231,6 +215,35 @@ export const ViewBug = ({ bugId, onEdit, onClose }: ViewBugProps) => {
                                 <p className="mt-1 text-gray-900">
                                     {bug.updatedAt ? DateTime.fromMillis(bug.updatedAt).toFormat('MMM d, yyyy h:mm a') : 'N/A'}
                                 </p>
+                            </div>
+                            <div>
+                                <h4 className="text-sm font-medium text-gray-500 mb-2">Priority</h4>
+                                <span className={`px-3 py-1 text-sm font-medium rounded-full ${getPriorityColour(bug.priority)}`}>
+                                    {priority?.name}
+                                </span>
+                            </div>
+
+                            <div>
+                                <h4 className="text-sm font-medium text-gray-500 mb-2">Tags</h4>
+                                <div className="flex flex-wrap gap-2">
+                                    {bugTags.map(bugTag => {
+                                        const tag = tags.find(t => t._id === bugTag.tag);
+                                        if (!tag) return null;
+                                        return (
+                                            <span
+                                                key={bugTag._id}
+                                                className="px-3 py-1 text-sm font-medium rounded-full bg-gray-100 text-gray-800 flex items-center"
+                                                style={{ backgroundColor: `${tag.color}20`, color: tag.color }}
+                                            >
+                                                <span
+                                                    className="w-2 h-2 rounded-full mr-1"
+                                                    style={{ backgroundColor: tag.color }}
+                                                />
+                                                {tag.name}
+                                            </span>
+                                        );
+                                    })}
+                                </div>
                             </div>
                         </div>
                     </div>

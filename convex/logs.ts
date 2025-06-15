@@ -7,6 +7,40 @@ export const get = query({
     },
 });
 
+export const getFiltered = query({
+    args: { bugId: v.optional(v.id("bugs")), userId: v.optional(v.id("users")), commentId: v.optional(v.id("comments")) },
+    handler: async (ctx, args) => {
+        return await ctx.db.query("logs")
+            .filter((q) => args.bugId ? q.eq(q.field("bug"), args.bugId) : true)
+            .filter((q) => args.userId ? q.eq(q.field("user"), args.userId) : true)
+            .filter((q) => args.commentId ? q.eq(q.field("comment"), args.commentId) : true)
+            .collect();
+    },
+});
+
+
+export const getByBug = query({
+    args: { bugId: v.optional(v.id("bugs")) },
+    handler: async (ctx, args) => {
+        return await ctx.db.query("logs").filter((q) => q.eq(q.field("bug"), args.bugId)).collect();
+    },
+});
+
+export const getByUser = query({
+    args: { userId: v.optional(v.id("users")) },
+    handler: async (ctx, args) => {
+        return await ctx.db.query("logs").filter((q) => q.eq(q.field("user"), args.userId)).collect();
+    },
+});
+
+export const getByComment = query({
+    args: { commentId: v.optional(v.id("comments")) },
+    handler: async (ctx, args) => {
+        return await ctx.db.query("logs").filter((q) => q.eq(q.field("comment"), args.commentId)).collect();
+    },
+});
+
+
 export const create = mutation({
     args: {
         action: v.string(),

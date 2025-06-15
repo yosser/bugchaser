@@ -21,7 +21,10 @@ export const BugCard = ({ bug, onEdit, setShowViewBug }: BugCardProps) => {
     const users = useQuery(api.users.get) ?? [];
     const statuses = useQuery(api.status.get) ?? [];
     const priorities = useQuery(api.priority.get) ?? [];
-    const comments = useQuery(api.comments.get) ?? [];
+    const comments = useQuery(api.comments.getByBug, { bugId: bug._id }) ?? [];
+    const bugTags = useQuery(api.bugsTags.getByBug, { bugId: bug._id }) ?? [];
+    const tags = useQuery(api.tags.get) ?? [];
+
     const assignedUser = users?.find(user => user._id === bug.assignedTo);
     const reporter = users?.find(user => user._id === bug.reporter);
     const status = statuses.find(s => s._id === bug.status);
@@ -29,7 +32,7 @@ export const BugCard = ({ bug, onEdit, setShowViewBug }: BugCardProps) => {
     const [showComments, setShowComments] = useState(false);
     const [{ isDragging }, drag] = useDrag(() => ({
         type: 'BUG',
-        item: { id: bug._id, priority: bug.priority },
+        item: bug,
         collect: (monitor) => ({
             isDragging: !!monitor.isDragging(),
         }),
@@ -57,31 +60,21 @@ export const BugCard = ({ bug, onEdit, setShowViewBug }: BugCardProps) => {
     const getPriorityColour = (priorityId: Id<"priority">) => {
         const priorityValue = priorities.find(p => p._id === priorityId)?.value;
         switch (priorityValue) {
-            case 5:
+            case 1:
                 return 'bg-red-100 text-red-800';
-            case 4:
+            case 2:
                 return 'bg-orange-100 text-orange-800';
             case 3:
                 return 'bg-yellow-100 text-yellow-800';
-            case 2:
-                return 'bg-light-green-100 text-light-green-800';
-            case 1:
+            case 4:
                 return 'bg-green-100 text-green-800';
             default:
-                return 'bg-gray-100 text-gray-800';
+                return 'bg-gret-100 text-grey800';
         }
     };
 
-    const rootComments = comments.filter(c => c.bug === bug._id && !c.parentComment && !c.isDeleted);
-
-    const handleReply = (comment: Doc<"comments">) => {
-        setReplyToComment(comment);
-        setShowAddComment(true);
-    };
-
-    const handleCloseComment = () => {
-        setShowAddComment(false);
-        setReplyToComment(null);
+    const getCommentsForBug = () => {
+        return comments.filter(comment => comment.bug === bug._id && !comment.parentComment && !comment.isDeleted);
     };
 
     return (
@@ -115,72 +108,86 @@ export const BugCard = ({ bug, onEdit, setShowViewBug }: BugCardProps) => {
                         )}
                     </div>
                 </div>
-                <p className="text-gray-600 text-sm mb-3 line-clamp-2">{bug.description}</p>
-                <div className="flex flex-wrap gap-2 mb-3">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColour(bug.status)}`}>
+
+                <div className="flex flex-wrap gap-2 mb-2">
+                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColour(bug.status)}`}>
                         {status?.name}
                     </span>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityColour(bug.priority)}`}>
+                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getPriorityColour(bug.priority)}`}>
                         {priority?.name}
                     </span>
-                </div>
-                <div className="flex justify-between items-center text-sm text-gray-500">
-                    <div className="flex items-center space-x-2">
-                        <span>Assigned to: {assignedUser?.name}</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                        <span>Reporter: {reporter?.name}</span>
-                    </div>
-                </div>
-                <div className="mt-3">
-                    <div className="flex items-center justify-between">
-                        <button
-                            onClick={() => setShowComments(!showComments)}
-                            className="text-sm text-blue-600 hover:text-blue-700 focus:outline-none flex items-center space-x-1"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                <path fillRule="evenodd" d="M18 10c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.014 3 10c0-4.418 4.03-8 9-8s9 3.582 9 8zM7 9a1 1 0 100-2 1 1 0 000 2zm7-1a1 1 0 11-2 0 1 1 0 012 0zm-7.536 5.879a1 1 0 001.415 0 3 3 0 014.242 0 1 1 0 001.415-1.415 5 5 0 00-7.072 0 1 1 0 000 1.415z" clipRule="evenodd" />
-                            </svg>
-                            <span>
-                                {rootComments.length} {rootComments.length === 1 ? 'Comment' : 'Comments'}
+                    {bugTags.map(bugTag => {
+                        const tag = tags.find(t => t._id === bugTag.tag);
+                        if (!tag) return null;
+                        return (
+                            <span
+                                key={bugTag._id}
+                                className="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800 flex items-center"
+                                style={{ backgroundColor: `${tag.color}20`, color: tag.color }}
+                            >
+                                <span
+                                    className="w-2 h-2 rounded-full mr-1"
+                                    style={{ backgroundColor: tag.color }}
+                                />
+                                {tag.name}
                             </span>
-                        </button>
-                        <button
-                            onClick={() => setShowAddComment(true)}
-                            className="text-sm text-blue-600 hover:text-blue-700 focus:outline-none flex items-center space-x-1"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
-                            </svg>
-                            <span>Add Comment</span>
-                        </button>
-                    </div>
-                    {showComments && rootComments.length > 0 && (
-                        <div className="mt-3 space-y-3">
-                            {rootComments.map((comment) => (
+                        );
+                    })}
+                </div>
+
+                <div className="text-sm text-gray-600 mb-2">
+                    <p>Assigned to: {assignedUser?.name}</p>
+                    <p>Reported by: {reporter?.name}</p>
+                </div>
+
+                <div className="text-xs text-gray-500">
+                    <p>Created: {DateTime.fromMillis(bug.createdAt ?? 0).toRelative()}</p>
+                    {bug.updatedAt && (
+                        <p>Updated: {DateTime.fromMillis(bug.updatedAt).toRelative()}</p>
+                    )}
+                </div>
+
+                <div className="mt-4">
+                    <button
+                        onClick={() => setShowComments(!showComments)}
+                        className="text-sm text-blue-600 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
+                    >
+                        {showComments ? 'Hide Comments' : 'Show Comments'}
+                    </button>
+                    {showComments && (
+                        <div className="mt-2 space-y-2">
+                            {getCommentsForBug().map((comment) => (
                                 <Comment
                                     key={comment._id}
                                     comment={comment}
                                     users={users}
-                                    onReply={handleReply}
+                                    onReply={() => {
+                                        setReplyToComment(comment);
+                                        setShowAddComment(true);
+                                    }}
                                 />
                             ))}
+                            <button
+                                onClick={() => setShowAddComment(true)}
+                                className="text-sm text-blue-600 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
+                            >
+                                Add Comment
+                            </button>
                         </div>
                     )}
                 </div>
-                <div className="flex justify-between items-center text-xs text-gray-400 mt-2">
-                    <span>Created: {bug.createdAt ? DateTime.fromMillis(bug.createdAt).toRelative() : 'N/A'}</span>
-                    <span>Updated: {bug.updatedAt ? DateTime.fromMillis(bug.updatedAt).toRelative() : 'N/A'}</span>
-                </div>
             </div>
+
             {showAddComment && (
                 <AddComment
-                    onClose={handleCloseComment}
                     bugId={bug._id}
+                    onClose={() => {
+                        setShowAddComment(false);
+                        setReplyToComment(null);
+                    }}
                     parentComment={replyToComment ?? undefined}
                 />
             )}
-
         </>
     );
 }; 

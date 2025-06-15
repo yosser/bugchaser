@@ -1,69 +1,67 @@
-import { useContext, useState } from "react";
-import type { Doc } from "../../../../convex/_generated/dataModel";
+import { useState } from "react";
 import { useMutation } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
-import { UserContext } from "../../../context/userContext";
-import type { IUserContext } from "../../../context/userContext";
 
-interface EditCommentProps {
-    comment: Doc<"comments">;
+interface AddProjectProps {
     onClose: () => void;
 }
 
-export const EditComment = ({ comment, onClose }: EditCommentProps) => {
-    const { currentUser } = useContext<IUserContext>(UserContext);
+export const AddProject = ({ onClose }: AddProjectProps) => {
+    const createProject = useMutation(api.projects.create);
     const [formData, setFormData] = useState({
-        text: comment.text,
+        name: "",
+        description: "",
     });
-
-    const updateComment = useMutation(api.comments.update);
-    const createLog = useMutation(api.logs.create);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            await updateComment({
-                id: comment._id,
-                ...formData,
-                isEdited: true,
-            });
-            await createLog({
-                action: "Comment edited",
-                user: currentUser?._id,
-                bug: comment.bug,
-                comment: comment._id,
+            await createProject({
+                name: formData.name,
+                description: formData.description,
             });
             onClose();
         } catch (error) {
-            console.error("Failed to update comment:", error);
+            console.error("Failed to create project:", error);
         }
     };
 
-    const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
+        setFormData(prev => ({ ...prev, [name]: value }));
     };
 
     return (
         <div className="fixed inset-0 bg-gray-500/75 flex items-center justify-center">
             <div className="bg-white rounded-lg p-6 w-full max-w-md">
-                <h2 className="text-2xl font-semibold mb-6">Edit Comment</h2>
+                <h2 className="text-2xl font-semibold mb-6">Add Project</h2>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                        <label htmlFor="text" className="block text-sm font-medium text-gray-700 mb-1">
-                            Comment
+                        <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                            Name
+                        </label>
+                        <input
+                            type="text"
+                            id="name"
+                            name="name"
+                            value={formData.name}
+                            onChange={handleChange}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            required
+                        />
+                    </div>
+
+                    <div>
+                        <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+                            Description
                         </label>
                         <textarea
-                            id="text"
-                            name="text"
-                            value={formData.text}
+                            id="description"
+                            name="description"
+                            value={formData.description}
                             onChange={handleChange}
                             rows={4}
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            required
                         />
                     </div>
 
@@ -79,7 +77,7 @@ export const EditComment = ({ comment, onClose }: EditCommentProps) => {
                             type="submit"
                             className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         >
-                            Save Changes
+                            Create Project
                         </button>
                     </div>
                 </form>

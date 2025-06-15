@@ -10,12 +10,15 @@ interface AddBugProps {
 }
 
 export const AddBug = ({ onClose }: AddBugProps) => {
-    const { currentUser } = useContext<IUserContext>(UserContext);
+    const { currentUser, currentProject } = useContext<IUserContext>(UserContext);
     const users = useQuery(api.users.get);
     const statuses = useQuery(api.status.get);
     const priorities = useQuery(api.priority.get);
+    const tags = useQuery(api.tags.get);
     const createBug = useMutation(api.bugs.create);
     const createLog = useMutation(api.logs.create);
+    const createBugTag = useMutation(api.bugsTags.create);
+
     const [formData, setFormData] = useState({
         title: "",
         description: "",
@@ -25,12 +28,15 @@ export const AddBug = ({ onClose }: AddBugProps) => {
         assignedTo: currentUser?._id ?? "" as Id<"users">,
     });
 
+    const [selectedTags, setSelectedTags] = useState<Id<"tags">[]>([]);
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!formData.status || !formData.priority || !formData.reporter || !formData.assignedTo) {
             return;
         }
         try {
+
             const bugId = await createBug({
                 title: formData.title,
                 description: formData.description,
@@ -38,8 +44,18 @@ export const AddBug = ({ onClose }: AddBugProps) => {
                 priority: formData.priority,
                 reporter: formData.reporter,
                 assignedTo: formData.assignedTo,
+                project: currentProject?._id ?? "" as Id<"projects">,
             });
+
             if (bugId) {
+                // Add selected tags
+                for (const tagId of selectedTags) {
+                    await createBugTag({
+                        bugId,
+                        tagId,
+                    });
+                }
+
                 await createLog({
                     action: "Bug created",
                     user: currentUser?._id,
@@ -57,46 +73,63 @@ export const AddBug = ({ onClose }: AddBugProps) => {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
+    const handleTagChange = (tagId: Id<"tags">) => {
+        setSelectedTags(prev => {
+            if (prev.includes(tagId)) {
+                return prev.filter(id => id !== tagId);
+            } else {
+                return [...prev, tagId];
+            }
+        });
+    };
+
     return (
         <div className="fixed inset-0 bg-gray-500/75 flex items-center justify-center">
-            <div className="bg-white rounded-lg p-6 w-full max-w-2xl">
-                <h2 className="text-2xl font-semibold mb-4">Add Bug</h2>
+            <div className="bg-white rounded-lg p-6 w-full max-w-md">
+                <h2 className="text-2xl font-semibold mb-6">Add Bug</h2>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                        <label htmlFor="title" className="block text-sm font-medium text-gray-700">Title</label>
+                        <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
+                            Title
+                        </label>
                         <input
                             type="text"
                             id="title"
                             name="title"
                             value={formData.title}
                             onChange={handleChange}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                             required
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                         />
                     </div>
+
                     <div>
-                        <label htmlFor="description" className="block text-sm font-medium text-gray-700">Description</label>
+                        <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+                            Description
+                        </label>
                         <textarea
                             id="description"
                             name="description"
                             value={formData.description}
                             onChange={handleChange}
-                            required
                             rows={4}
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            required
                         />
                     </div>
+
                     <div>
-                        <label htmlFor="status" className="block text-sm font-medium text-gray-700">Status</label>
+                        <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
+                            Status
+                        </label>
                         <select
                             id="status"
                             name="status"
                             value={formData.status}
                             onChange={handleChange}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                             required
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                         >
-                            <option value="">Select Status</option>
                             {statuses?.map((status) => (
                                 <option key={status._id} value={status._id}>
                                     {status.name}
@@ -104,17 +137,19 @@ export const AddBug = ({ onClose }: AddBugProps) => {
                             ))}
                         </select>
                     </div>
+
                     <div>
-                        <label htmlFor="priority" className="block text-sm font-medium text-gray-700">Priority</label>
+                        <label htmlFor="priority" className="block text-sm font-medium text-gray-700 mb-1">
+                            Priority
+                        </label>
                         <select
                             id="priority"
                             name="priority"
                             value={formData.priority}
                             onChange={handleChange}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                             required
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                         >
-                            <option value="">Select Priority</option>
                             {priorities?.map((priority) => (
                                 <option key={priority._id} value={priority._id}>
                                     {priority.name}
@@ -122,35 +157,19 @@ export const AddBug = ({ onClose }: AddBugProps) => {
                             ))}
                         </select>
                     </div>
+
                     <div>
-                        <label htmlFor="reporter" className="block text-sm font-medium text-gray-700">Reporter</label>
-                        <select
-                            id="reporter"
-                            name="reporter"
-                            value={formData.reporter}
-                            onChange={handleChange}
-                            required
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                        >
-                            <option value="">Select Reporter</option>
-                            {users?.map((user) => (
-                                <option key={user._id} value={user._id}>
-                                    {user.name}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-                    <div>
-                        <label htmlFor="assignedTo" className="block text-sm font-medium text-gray-700">Assigned To</label>
+                        <label htmlFor="assignedTo" className="block text-sm font-medium text-gray-700 mb-1">
+                            Assigned To
+                        </label>
                         <select
                             id="assignedTo"
                             name="assignedTo"
                             value={formData.assignedTo}
                             onChange={handleChange}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                             required
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                         >
-                            <option value="">Select Assignee</option>
                             {users?.map((user) => (
                                 <option key={user._id} value={user._id}>
                                     {user.name}
@@ -158,17 +177,43 @@ export const AddBug = ({ onClose }: AddBugProps) => {
                             ))}
                         </select>
                     </div>
-                    <div className="flex justify-end space-x-3">
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Tags
+                        </label>
+                        <div className="space-y-2">
+                            {tags?.map((tag) => (
+                                <label key={tag._id} className="flex items-center space-x-2">
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedTags.includes(tag._id)}
+                                        onChange={() => handleTagChange(tag._id)}
+                                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                    />
+                                    <span className="flex items-center">
+                                        <span
+                                            className="w-3 h-3 rounded-full mr-2"
+                                            style={{ backgroundColor: tag.color ?? '#3B82F6' }}
+                                        />
+                                        {tag.name}
+                                    </span>
+                                </label>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="flex justify-end space-x-3 mt-6">
                         <button
                             type="button"
                             onClick={onClose}
-                            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
-                            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         >
                             Create Bug
                         </button>

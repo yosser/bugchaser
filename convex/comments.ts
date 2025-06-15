@@ -7,6 +7,26 @@ export const get = query({
     },
 });
 
+export const getByBug = query({
+    args: { bugId: v.optional(v.id("bugs")) },
+    handler: async (ctx, args) => {
+        return await ctx.db.query("comments").filter((q) => q.eq(q.field("bug"), args.bugId)).collect();
+    },
+});
+export const getByUser = query({
+    args: { userId: v.optional(v.id("users")) },
+    handler: async (ctx, args) => {
+        return await ctx.db.query("comments").filter((q) => q.eq(q.field("user"), args.userId)).collect();
+    },
+});
+export const getByParentComment = query({
+    args: { parentCommentId: v.optional(v.id("comments")) },
+    handler: async (ctx, args) => {
+        return await ctx.db.query("comments").filter((q) => q.eq(q.field("parentComment"), args.parentCommentId)).collect();
+    },
+});
+
+
 export const create = mutation({
     args: {
         text: v.string(),

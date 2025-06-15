@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import type { Doc, Id } from "../../../../convex/_generated/dataModel";
+import { UserContext } from "../../../context/userContext";
 import { AddBug } from "../add";
 import { EditBug } from "../edit";
 import { ConfirmationModal } from "../../common/ConfirmationModal";
@@ -11,7 +12,8 @@ import { ViewBug } from "../view/ViewBug";
 type ViewMode = "grid" | "list";
 
 export const ListBugs = () => {
-    const bugs = useQuery(api.bugs.get);
+    const { currentProject } = useContext(UserContext);
+    const bugs = useQuery(api.bugs.getByProject, { projectId: currentProject?._id });
     const [showViewBug, setShowViewBug] = useState<Id<'bugs'> | null>(null);
     const [showAddBug, setShowAddBug] = useState(false);
     const [bugToEdit, setBugToEdit] = useState<Doc<"bugs"> | null>(null);
@@ -79,8 +81,8 @@ export const ListBugs = () => {
                 <BugGrid onBugClick={handleBugClick} setShowViewBug={setShowViewBug} />
             ) : (
                 <BugList
-                    onBugClick={handleBugClick}
-                    onDeleteClick={setBugToDelete}
+                    onEditBug={handleBugClick}
+                    onViewBug={(bug) => setShowViewBug(bug._id)}
                 />
             )}
             {showViewBug && bugs?.find(b => b._id === showViewBug) && (

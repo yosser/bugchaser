@@ -21,16 +21,15 @@ interface IAssignedToColumnProps {
     assignedTo: Doc<"users">;
     bugs: Doc<"bugs">[];
     onBugEdit?: (bug: Doc<"bugs">) => void;
-    onDrop: (bugId: Id<"bugs">, assignedToId: Id<"users">) => void;
+    onDrop: (bug: Doc<"bugs">, assignedToId: Id<"users">) => void;
     setShowViewBug?: (bugId: Id<"bugs">) => void;
 }
 
 const AssignedToColumn = ({ assignedTo, bugs, onBugEdit, onDrop, setShowViewBug }: IAssignedToColumnProps) => {
-    // const dropRef = useRef<HTMLDivElement>(null);
     const [{ isOver }, drop] = useDrop(() => ({
         accept: 'BUG',
-        drop: (item: { id: Id<"bugs"> }) => {
-            onDrop(item.id, assignedTo._id);
+        drop: (item: Doc<"bugs">) => {
+            onDrop(item, assignedTo._id);
         },
         collect: (monitor) => ({
             isOver: monitor.isOver(),
@@ -64,7 +63,7 @@ interface IPriorityColumnProps {
     priority: Doc<"priority">;
     bugs: Doc<"bugs">[];
     onBugEdit?: (bug: Doc<"bugs">) => void;
-    onDrop: (bugId: Id<"bugs">, priorityId: Id<"priority">) => void;
+    onDrop: (bug: Doc<"bugs">, priorityId: Id<"priority">) => void;
     setShowViewBug?: (bugId: Id<"bugs">) => void;
 }
 
@@ -72,8 +71,8 @@ const PriorityColumn = ({ priority, bugs, onBugEdit, onDrop, setShowViewBug }: I
     const dropRef = useRef<HTMLDivElement>(null);
     const [{ isOver }, drop] = useDrop(() => ({
         accept: 'BUG',
-        drop: (item: { id: Id<"bugs"> }) => {
-            onDrop(item.id, priority._id);
+        drop: (item: Doc<"bugs">) => {
+            onDrop(item, priority._id);
         },
         collect: (monitor) => ({
             isOver: monitor.isOver(),
@@ -92,7 +91,6 @@ const PriorityColumn = ({ priority, bugs, onBugEdit, onDrop, setShowViewBug }: I
             <h3 className="text-lg font-semibold mb-4">{priority.name}</h3>
             <div className="space-y-4">
                 {columnBugs.map((bug) => {
-
                     return (
                         <BugCard
                             key={bug._id}
@@ -111,15 +109,15 @@ interface IStatusColumnProps {
     status: Doc<"status">;
     bugs: Doc<"bugs">[];
     onBugEdit?: (bug: Doc<"bugs">) => void;
-    onDrop: (bugId: Id<"bugs">, statusId: Id<"status">) => void;
+    onDrop: (bug: Doc<"bugs">, statusId: Id<"status">) => void;
     setShowViewBug?: (bugId: Id<"bugs">) => void;
 }
 
 const StatusColumn = ({ status, bugs, onBugEdit, onDrop, setShowViewBug }: IStatusColumnProps) => {
     const [{ isOver }, drop] = useDrop(() => ({
         accept: 'BUG',
-        drop: (item: { id: Id<"bugs"> }) => {
-            onDrop(item.id, status._id);
+        drop: (item: Doc<"bugs">) => {
+            onDrop(item, status._id);
         },
         collect: (monitor) => ({
             isOver: monitor.isOver(),
@@ -154,36 +152,27 @@ const StatusColumn = ({ status, bugs, onBugEdit, onDrop, setShowViewBug }: IStat
 };
 
 export const BugGrid = ({ onBugClick, setShowViewBug }: BugGridProps) => {
-    const { currentUser } = useContext<IUserContext>(UserContext);
+    const { currentUser, currentProject } = useContext<IUserContext>(UserContext);
     const [columnView, setColumnView] = useState<'status' | 'priority' | 'assignedTo'>('assignedTo');
-    const bugs = useQuery(api.bugs.get);
+    const bugs = useQuery(api.bugs.getByProject, { projectId: currentProject?._id });
     const users = useQuery(api.users.get);
     const statuses = useQuery(api.status.get);
     const priorities = useQuery(api.priority.get);
     const updateBug = useMutation(api.bugs.update);
     const createLog = useMutation(api.logs.create);
 
-    const handleDrop = async (bugId: Id<"bugs">, priorityId: Id<"priority">) => {
-        const bug = bugs?.find(b => b._id === bugId);
+    const handleDrop = async (bug: Doc<"bugs">, priorityId: Id<"priority">) => {
         const priority = priorities?.find(p => p._id === priorityId);
-        if (!bug || bug.priority === priorityId) {
-            return;
-        }
+
         try {
             await updateBug({
-                id: bugId,
-                title: bug.title,
-                description: bug.description,
-                status: bug.status,
-                priority: priorityId,
-                reporter: bug.reporter,
-                assignedTo: bug.assignedTo,
+                id: bug._id, priority: priorityId,
             });
 
             await createLog({
                 action: `Bug priority changed to ${priority?.name}`,
                 user: currentUser?._id,
-                bug: bugId,
+                bug: bug._id,
             });
 
         } catch (error) {
@@ -191,54 +180,30 @@ export const BugGrid = ({ onBugClick, setShowViewBug }: BugGridProps) => {
         }
     };
 
-    const handleDropStatus = async (bugId: Id<"bugs">, statusId: Id<"status">) => {
-        const bug = bugs?.find(b => b._id === bugId);
-        if (!bug || !bug.status || bug.status === statusId) {
-            return;
-        }
+    const handleDropStatus = async (bug: Doc<"bugs">, statusId: Id<"status">) => {
         const status = statuses?.find(s => s._id === statusId);
 
         try {
-            await updateBug({
-                id: bugId,
-                title: bug.title,
-                description: bug.description,
-                status: statusId,
-                priority: bug.priority,
-                reporter: bug.reporter,
-                assignedTo: bug.assignedTo,
-            });
+            await updateBug({ id: bug._id, status: statusId });
             await createLog({
                 action: `Bug status changed to ${status?.name}`,
                 user: currentUser?._id,
-                bug: bugId,
+                bug: bug._id,
             });
         } catch (error) {
             console.error('Failed to update bug status:', error);
         }
     };
 
-    const handleDropAssignedTo = async (bugId: Id<"bugs">, assignedToId: Id<"users">) => {
-        const bug = bugs?.find(b => b._id === bugId);
-        if (!bug || bug.assignedTo === assignedToId) {
-            return;
-        }
+    const handleDropAssignedTo = async (bug: Doc<"bugs">, assignedToId: Id<"users">) => {
         const assignedTo = users?.find(u => u._id === assignedToId);
 
         try {
-            await updateBug({
-                id: bugId,
-                title: bug.title,
-                description: bug.description,
-                status: bug.status,
-                priority: bug.priority,
-                reporter: bug.reporter,
-                assignedTo: assignedToId,
-            });
+            await updateBug({ id: bug._id, assignedTo: assignedToId });
             await createLog({
                 action: `Bug assigned to ${assignedTo?.name}`,
                 user: currentUser?._id,
-                bug: bugId,
+                bug: bug._id,
             });
         } catch (error) {
             console.error('Failed to update bug assigned to:', error);

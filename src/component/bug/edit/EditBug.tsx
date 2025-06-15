@@ -1,7 +1,7 @@
 import { useContext, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
-import type { Doc } from "../../../../convex/_generated/dataModel";
+import type { Doc, Id } from "../../../../convex/_generated/dataModel";
 import { UserContext } from "../../../context/userContext";
 import type { IUserContext } from "../../../context/userContext";
 
@@ -15,6 +15,8 @@ export const EditBug = ({ bug, onClose }: EditBugProps) => {
     const users = useQuery(api.users.get);
     const statuses = useQuery(api.status.get);
     const priorities = useQuery(api.priority.get);
+    const tags = useQuery(api.tags.get);
+    const bugTags = useQuery(api.bugsTags.getByBug, { bugId: bug._id });
 
     const [formData, setFormData] = useState({
         title: bug.title,
@@ -25,8 +27,14 @@ export const EditBug = ({ bug, onClose }: EditBugProps) => {
         assignedTo: bug.assignedTo,
     });
 
+    const [selectedTags, setSelectedTags] = useState<Id<"tags">[]>(
+        bugTags?.map(bt => bt.tag) ?? []
+    );
+
     const updateBug = useMutation(api.bugs.update);
     const createLog = useMutation(api.logs.create);
+    const createBugTag = useMutation(api.bugsTags.create);
+    const removeBugTag = useMutation(api.bugsTags.remove);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -35,6 +43,27 @@ export const EditBug = ({ bug, onClose }: EditBugProps) => {
                 id: bug._id,
                 ...formData,
             });
+
+            // Handle tag changes
+            const currentTags = bugTags?.map(bt => bt.tag) ?? [];
+            const tagsToAdd = selectedTags.filter(tagId => !currentTags.includes(tagId));
+            const tagsToRemove = bugTags?.filter(bt => !selectedTags.includes(bt.tag)) ?? [];
+
+            // Add new tags
+            for (const tagId of tagsToAdd) {
+                await createBugTag({
+                    bugId: bug._id,
+                    tagId,
+                });
+            }
+
+            // Remove tags
+            for (const bugTag of tagsToRemove) {
+                await removeBugTag({
+                    id: bugTag._id,
+                });
+            }
+
             await createLog({
                 action: "Bug updated",
                 user: currentUser?._id,
@@ -52,6 +81,16 @@ export const EditBug = ({ bug, onClose }: EditBugProps) => {
             ...prev,
             [name]: value
         }));
+    };
+
+    const handleTagChange = (tagId: Id<"tags">) => {
+        setSelectedTags(prev => {
+            if (prev.includes(tagId)) {
+                return prev.filter(id => id !== tagId);
+            } else {
+                return [...prev, tagId];
+            }
+        });
     };
 
     return (
@@ -147,6 +186,31 @@ export const EditBug = ({ bug, onClose }: EditBugProps) => {
                                 </option>
                             ))}
                         </select>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Tags
+                        </label>
+                        <div className="space-y-2">
+                            {tags?.map((tag) => (
+                                <label key={tag._id} className="flex items-center space-x-2">
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedTags.includes(tag._id)}
+                                        onChange={() => handleTagChange(tag._id)}
+                                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                    />
+                                    <span className="flex items-center">
+                                        <span
+                                            className="w-3 h-3 rounded-full mr-2"
+                                            style={{ backgroundColor: tag.color ?? '#3B82F6' }}
+                                        />
+                                        {tag.name}
+                                    </span>
+                                </label>
+                            ))}
+                        </div>
                     </div>
 
                     <div className="flex justify-end space-x-3 mt-6">

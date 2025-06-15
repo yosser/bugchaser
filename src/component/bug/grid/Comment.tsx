@@ -1,23 +1,27 @@
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import type { Doc } from "../../../../convex/_generated/dataModel";
 import { api } from "../../../../convex/_generated/api";
 import { DateTime } from "luxon";
+import { UserContext } from "../../../context/userContext";
+import type { IUserContext } from "../../../context/userContext";
 
 interface CommentProps {
     comment: Doc<"comments">;
     users: Doc<"users">[];
     level?: number;
-    onReply: (comment: Doc<"comments">) => void;
+    onReply?: (comment: Doc<"comments">) => void;
 }
 
 export const Comment = ({ comment, users, level = 0, onReply }: CommentProps) => {
+    const { currentUser } = useContext<IUserContext>(UserContext);
     const user = users.find(u => u._id === comment.user);
     const replies = useQuery(api.comments.get)?.filter(c => c.parentComment === comment._id && !c.isDeleted) ?? [];
     const [showReplies, setShowReplies] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
     const [editedText, setEditedText] = useState(comment.text);
     const updateComment = useMutation(api.comments.update);
+    const createLog = useMutation(api.logs.create);
 
     const handleEdit = async () => {
         if (editedText.trim() === '') {
@@ -29,6 +33,14 @@ export const Comment = ({ comment, users, level = 0, onReply }: CommentProps) =>
                 text: editedText,
                 isEdited: true,
             });
+
+            await createLog({
+                action: "Comment edited",
+                user: currentUser?._id,
+                bug: comment.bug,
+                comment: comment._id,
+            });
+
             setIsEditing(false);
         } catch (error) {
             console.error("Failed to update comment:", error);
@@ -99,17 +111,19 @@ export const Comment = ({ comment, users, level = 0, onReply }: CommentProps) =>
                         {comment.text}
                     </p>
                 )}
-                <div className="mt-2 flex items-center space-x-3">
-                    <button
-                        onClick={() => onReply(comment)}
-                        className="text-sm text-blue-600 hover:text-blue-700 focus:outline-none flex items-center space-x-1"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M7.707 3.293a1 1 0 010 1.414L5.414 7H11a7 7 0 017 7v2a1 1 0 11-2 0v-2a5 5 0 00-5-5H5.414l2.293 2.293a1 1 0 11-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                        <span>Reply</span>
-                    </button>
-                </div>
+                {onReply && (
+                    <div className="mt-2 flex items-center space-x-3">
+                        <button
+                            onClick={() => onReply(comment)}
+                            className="text-sm text-blue-600 hover:text-blue-700 focus:outline-none flex items-center space-x-1"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M7.707 3.293a1 1 0 010 1.414L5.414 7H11a7 7 0 017 7v2a1 1 0 11-2 0v-2a5 5 0 00-5-5H5.414l2.293 2.293a1 1 0 11-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                            <span>Reply</span>
+                        </button>
+                    </div>
+                )}
             </div>
             {replies.length > 0 && (
                 <div className="mt-2">

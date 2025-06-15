@@ -2,10 +2,6 @@ import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
 export default defineSchema({
-  tasks: defineTable({
-    text: v.string(),
-    isCompleted: v.boolean(),
-  }),
   users: defineTable({
     name: v.string(),
     email: v.string(),
@@ -13,7 +9,17 @@ export default defineSchema({
     role: v.id("role"),
     createdAt: v.optional(v.number()),
     updatedAt: v.optional(v.number()),
+    isDeleted: v.optional(v.boolean()),
   }),
+  tags: defineTable({
+    name: v.string(),
+    isDeleted: v.optional(v.boolean()),
+    color: v.optional(v.string()),
+  }),
+  bugsTags: defineTable({
+    bug: v.id("bugs"),
+    tag: v.id("tags"),
+  }).index("by_bug", ["bug"]).index("by_tag", ["tag"]),
   status: defineTable({
     name: v.string(),
     value: v.number(),
@@ -32,17 +38,33 @@ export default defineSchema({
     bug: v.optional(v.id("bugs")),
     comment: v.optional(v.id("comments")),
     createdAt: v.optional(v.number()),
+  }).index("by_bug", ["bug"]).index("by_comment", ["comment"]).index("by_user", ["user"]),
+
+  projects: defineTable({
+    name: v.string(),
+    description: v.optional(v.string()),
+    createdAt: v.optional(v.number()),
+    updatedAt: v.optional(v.number()),
+    isDeleted: v.optional(v.boolean()),
   }),
+  projectsUsers: defineTable({
+    project: v.id("projects"),
+    user: v.id("users"),
+  }).index("by_project", ["project"]).index("by_user", ["user"]),
+
   bugs: defineTable({
     title: v.string(),
     description: v.optional(v.string()),
+    project: v.optional(v.id("projects")),
     status: v.id("status"),
     priority: v.id("priority"),
     reporter: v.optional(v.id("users")),
     assignedTo: v.optional(v.id("users")),
     createdAt: v.optional(v.number()),
     updatedAt: v.optional(v.number()),
+    isDeleted: v.optional(v.boolean()),
   }),
+
   comments: defineTable({
     text: v.string(),
     bug: v.optional(v.id("bugs")),
