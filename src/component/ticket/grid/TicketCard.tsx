@@ -8,31 +8,32 @@ import { useDragRef } from "../../../hooks/hooks";
 import { DateTime } from "luxon";
 import { Comment } from "./Comment";
 
-interface BugCardProps {
-    bug: Doc<"bugs">;
-    onEdit?: (bug: Doc<"bugs">) => void;
-    setShowViewBug?: (bugId: Id<"bugs">) => void;
+interface TicketCardProps {
+    ticket: Doc<"tickets">;
+    onEdit?: (ticket: Doc<"tickets">) => void;
+    setShowViewTicket?: (ticketId: Id<"tickets">) => void;
 }
 
-export const BugCard = ({ bug, onEdit, setShowViewBug }: BugCardProps) => {
+export const TicketCard = ({ ticket, onEdit, setShowViewTicket }: TicketCardProps) => {
     const [showAddComment, setShowAddComment] = useState(false);
     const [replyToComment, setReplyToComment] = useState<Doc<"comments"> | null>(null);
 
     const users = useQuery(api.users.get) ?? [];
     const statuses = useQuery(api.status.get) ?? [];
     const priorities = useQuery(api.priority.get) ?? [];
-    const comments = useQuery(api.comments.getByBug, { bugId: bug._id }) ?? [];
-    const bugTags = useQuery(api.bugsTags.getByBug, { bugId: bug._id }) ?? [];
+    const comments = useQuery(api.comments.getByTicket, { ticketId: ticket._id }) ?? [];
+    const ticketTypes = useQuery(api.ticketType.get) ?? [];
+    const ticketTags = useQuery(api.ticketsTags.getByTicket, { ticketId: ticket._id }) ?? [];
     const tags = useQuery(api.tags.get) ?? [];
 
-    const assignedUser = users?.find(user => user._id === bug.assignedTo);
-    const reporter = users?.find(user => user._id === bug.reporter);
-    const status = statuses.find(s => s._id === bug.status);
-    const priority = priorities.find(p => p._id === bug.priority);
+    const assignedUser = users?.find(user => user._id === ticket.assignedTo);
+    const reporter = users?.find(user => user._id === ticket.reporter);
+    const status = statuses.find(s => s._id === ticket.status);
+    const priority = priorities.find(p => p._id === ticket.priority);
     const [showComments, setShowComments] = useState(false);
     const [{ isDragging }, drag] = useDrag(() => ({
-        type: 'BUG',
-        item: bug,
+        type: 'TICKET',
+        item: ticket,
         collect: (monitor) => ({
             isDragging: !!monitor.isDragging(),
         }),
@@ -53,7 +54,7 @@ export const BugCard = ({ bug, onEdit, setShowViewBug }: BugCardProps) => {
             case 5:
                 return 'bg-light-green-100 text-light-green-800';
             default:
-                return 'bg-gret-100 text-grey800';
+                return 'bg-grey-100 text-grey-800';
         }
     };
 
@@ -69,12 +70,12 @@ export const BugCard = ({ bug, onEdit, setShowViewBug }: BugCardProps) => {
             case 4:
                 return 'bg-green-100 text-green-800';
             default:
-                return 'bg-gret-100 text-grey800';
+                return 'bg-grey-100 text-grey-800';
         }
     };
 
-    const getCommentsForBug = () => {
-        return comments.filter(comment => comment.bug === bug._id && !comment.parentComment && !comment.isDeleted);
+    const getCommentsForTicket = () => {
+        return comments.filter(comment => comment.ticket === ticket._id && !comment.parentComment && !comment.isDeleted);
     };
 
     return (
@@ -84,10 +85,10 @@ export const BugCard = ({ bug, onEdit, setShowViewBug }: BugCardProps) => {
                 className={`bg-white rounded-lg shadow p-4 mb-2 cursor-move ${isDragging ? 'opacity-50' : ''}`}
             >
                 <div className="flex justify-between items-start mb-2">
-                    <h3 className="font-semibold text-gray-900">{bug.title}</h3>
+                    <h3 className="font-semibold text-gray-900">{ticket.title}</h3>
                     <div className="flex space-x-2">
                         <button
-                            onClick={() => setShowViewBug?.(bug._id)}
+                            onClick={() => setShowViewTicket?.(ticket._id)}
                             className="text-blue-600 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
                             title="View Details"
                         >
@@ -98,7 +99,7 @@ export const BugCard = ({ bug, onEdit, setShowViewBug }: BugCardProps) => {
                         </button>
                         {onEdit && (
                             <button
-                                onClick={() => onEdit?.(bug)}
+                                onClick={() => onEdit?.(ticket)}
                                 className="text-blue-600 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -110,18 +111,21 @@ export const BugCard = ({ bug, onEdit, setShowViewBug }: BugCardProps) => {
                 </div>
 
                 <div className="flex flex-wrap gap-2 mb-2">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColour(bug.status)}`}>
+                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColour(ticket.status)}`}>
                         {status?.name}
                     </span>
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getPriorityColour(bug.priority)}`}>
+                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getPriorityColour(ticket.priority)}`}>
                         {priority?.name}
                     </span>
-                    {bugTags.map(bugTag => {
-                        const tag = tags.find(t => t._id === bugTag.tag);
+                    <span className={`px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800`}>
+                        {ticketTypes.find(t => t._id === ticket.type)?.name}
+                    </span>
+                    {ticketTags.map(ticketTag => {
+                        const tag = tags.find(t => t._id === ticketTag.tag);
                         if (!tag) return null;
                         return (
                             <span
-                                key={bugTag._id}
+                                key={ticketTag._id}
                                 className="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800 flex items-center"
                                 style={{ backgroundColor: `${tag.color}20`, color: tag.color }}
                             >
@@ -141,9 +145,9 @@ export const BugCard = ({ bug, onEdit, setShowViewBug }: BugCardProps) => {
                 </div>
 
                 <div className="text-xs text-gray-500">
-                    <p>Created: {DateTime.fromMillis(bug.createdAt ?? 0).toRelative()}</p>
-                    {bug.updatedAt && (
-                        <p>Updated: {DateTime.fromMillis(bug.updatedAt).toRelative()}</p>
+                    <p>Created: {DateTime.fromMillis(ticket.createdAt ?? 0).toRelative()}</p>
+                    {ticket.updatedAt && (
+                        <p>Updated: {DateTime.fromMillis(ticket.updatedAt).toRelative()}</p>
                     )}
                 </div>
 
@@ -156,7 +160,7 @@ export const BugCard = ({ bug, onEdit, setShowViewBug }: BugCardProps) => {
                     </button>
                     {showComments && (
                         <div className="mt-2 space-y-2">
-                            {getCommentsForBug().map((comment) => (
+                            {getCommentsForTicket().map((comment) => (
                                 <Comment
                                     key={comment._id}
                                     comment={comment}
@@ -180,7 +184,7 @@ export const BugCard = ({ bug, onEdit, setShowViewBug }: BugCardProps) => {
 
             {showAddComment && (
                 <AddComment
-                    bugId={bug._id}
+                    ticketId={ticket._id}
                     onClose={() => {
                         setShowAddComment(false);
                         setReplyToComment(null);

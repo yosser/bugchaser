@@ -6,7 +6,7 @@ import { EditTag } from "../edit/EditTag";
 import { AddTag } from "../add/AddTag";
 import { ConfirmationModal } from "../../common/ConfirmationModal";
 
-export const ListTags = () => {
+export const ListTags: React.FunctionComponent = () => {
     const tags = useQuery(api.tags.get);
     const [tagToEdit, setTagToEdit] = useState<Doc<"tags"> | null>(null);
     const [showAddTag, setShowAddTag] = useState(false);

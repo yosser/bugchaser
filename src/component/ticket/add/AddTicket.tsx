@@ -1,86 +1,80 @@
 import { useContext, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
-import type { Doc, Id } from "../../../../convex/_generated/dataModel";
+import type { Id } from "../../../../convex/_generated/dataModel";
 import { UserContext } from "../../../context/userContext";
 import type { IUserContext } from "../../../context/userContext";
 
-interface EditBugProps {
-    bug: Doc<"bugs">;
+interface AddTicketProps {
     onClose: () => void;
 }
 
-export const EditBug = ({ bug, onClose }: EditBugProps) => {
-    const { currentUser } = useContext<IUserContext>(UserContext);
+export const AddTicket = ({ onClose }: AddTicketProps) => {
+    const { currentUser, currentProject } = useContext<IUserContext>(UserContext);
     const users = useQuery(api.users.get);
     const statuses = useQuery(api.status.get);
     const priorities = useQuery(api.priority.get);
     const tags = useQuery(api.tags.get);
-    const bugTags = useQuery(api.bugsTags.getByBug, { bugId: bug._id });
+    const ticketTypes = useQuery(api.ticketType.get);
+    const createTicket = useMutation(api.tickets.create);
+    const createLog = useMutation(api.logs.create);
+    const createTicketTag = useMutation(api.ticketsTags.create);
 
     const [formData, setFormData] = useState({
-        title: bug.title,
-        description: bug.description ?? '',
-        status: bug.status,
-        priority: bug.priority,
-        reporter: bug.reporter,
-        assignedTo: bug.assignedTo,
+        title: "",
+        description: "",
+        status: statuses?.[0]?._id ?? "" as Id<"status">,
+        priority: priorities?.[3]?._id ?? "" as Id<"priority">,
+        type: ticketTypes?.[0]?._id ?? "" as Id<"ticketType">,
+        reporter: currentUser?._id ?? "" as Id<"users">,
+        assignedTo: currentUser?._id ?? "" as Id<"users">,
+        dueDate: undefined,
     });
 
-    const [selectedTags, setSelectedTags] = useState<Id<"tags">[]>(
-        bugTags?.map(bt => bt.tag) ?? []
-    );
-
-    const updateBug = useMutation(api.bugs.update);
-    const createLog = useMutation(api.logs.create);
-    const createBugTag = useMutation(api.bugsTags.create);
-    const removeBugTag = useMutation(api.bugsTags.remove);
+    const [selectedTags, setSelectedTags] = useState<Id<"tags">[]>([]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!formData.status || !formData.priority || !formData.reporter || !formData.assignedTo) {
+            return;
+        }
         try {
-            await updateBug({
-                id: bug._id,
-                ...formData,
+            const ticketId = await createTicket({
+                title: formData.title,
+                description: formData.description,
+                status: formData.status,
+                priority: formData.priority,
+                reporter: formData.reporter,
+                assignedTo: formData.assignedTo,
+                type: formData.type,
+                project: currentProject?._id ?? "" as Id<"projects">,
+                dueDate: formData.dueDate ? new Date(formData.dueDate).getTime() : undefined,
             });
 
-            // Handle tag changes
-            const currentTags = bugTags?.map(bt => bt.tag) ?? [];
-            const tagsToAdd = selectedTags.filter(tagId => !currentTags.includes(tagId));
-            const tagsToRemove = bugTags?.filter(bt => !selectedTags.includes(bt.tag)) ?? [];
+            if (ticketId) {
+                // Add selected tags
+                for (const tagId of selectedTags) {
+                    await createTicketTag({
+                        ticketId,
+                        tagId,
+                    });
+                }
 
-            // Add new tags
-            for (const tagId of tagsToAdd) {
-                await createBugTag({
-                    bugId: bug._id,
-                    tagId,
+                await createLog({
+                    action: "Ticket created",
+                    user: currentUser?._id,
+                    ticket: ticketId,
                 });
             }
-
-            // Remove tags
-            for (const bugTag of tagsToRemove) {
-                await removeBugTag({
-                    id: bugTag._id,
-                });
-            }
-
-            await createLog({
-                action: "Bug updated",
-                user: currentUser?._id,
-                bug: bug._id,
-            });
             onClose();
         } catch (error) {
-            console.error("Failed to update bug:", error);
+            console.error("Failed to create ticket:", error);
         }
     };
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
+        setFormData(prev => ({ ...prev, [name]: value }));
     };
 
     const handleTagChange = (tagId: Id<"tags">) => {
@@ -96,7 +90,7 @@ export const EditBug = ({ bug, onClose }: EditBugProps) => {
     return (
         <div className="fixed inset-0 bg-gray-500/75 flex items-center justify-center">
             <div className="bg-white rounded-lg p-6 w-full max-w-md">
-                <h2 className="text-2xl font-semibold mb-6">Edit Bug</h2>
+                <h2 className="text-2xl font-semibold mb-6">Add Ticket</h2>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
                         <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
@@ -111,6 +105,25 @@ export const EditBug = ({ bug, onClose }: EditBugProps) => {
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                             required
                         />
+                    </div>
+
+                    <div>
+                        <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-1">
+                            Type
+                        </label>
+                        <select
+                            id="type"
+                            name="type"
+                            value={formData.type}
+                            onChange={handleChange}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            required
+                        >{ticketTypes?.map((type) => (
+                            <option key={type._id} value={type._id}>
+                                {type.name}
+                            </option>
+                        ))}
+                        </select>
                     </div>
 
                     <div>
@@ -187,7 +200,19 @@ export const EditBug = ({ bug, onClose }: EditBugProps) => {
                             ))}
                         </select>
                     </div>
-
+                    <div>
+                        <label htmlFor="dueDate" className="block text-sm font-medium text-gray-700 mb-1">
+                            Due Date
+                        </label>
+                        <input
+                            type="date"
+                            id="dueDate"
+                            name="dueDate"
+                            value={formData.dueDate}
+                            onChange={handleChange}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                    </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                             Tags
@@ -225,7 +250,7 @@ export const EditBug = ({ bug, onClose }: EditBugProps) => {
                             type="submit"
                             className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         >
-                            Save Changes
+                            Create ticket
                         </button>
                     </div>
                 </form>
@@ -233,4 +258,3 @@ export const EditBug = ({ bug, onClose }: EditBugProps) => {
         </div>
     );
 };
-

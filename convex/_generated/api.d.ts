@@ -13,8 +13,6 @@ import type {
   FilterApi,
   FunctionReference,
 } from "convex/server";
-import type * as bugs from "../bugs.js";
-import type * as bugsTags from "../bugsTags.js";
 import type * as comments from "../comments.js";
 import type * as logs from "../logs.js";
 import type * as priority from "../priority.js";
@@ -23,7 +21,9 @@ import type * as projectsUsers from "../projectsUsers.js";
 import type * as roles from "../roles.js";
 import type * as status from "../status.js";
 import type * as tags from "../tags.js";
-import type * as tasks from "../tasks.js";
+import type * as ticketType from "../ticketType.js";
+import type * as tickets from "../tickets.js";
+import type * as ticketsTags from "../ticketsTags.js";
 import type * as users from "../users.js";
 
 /**
@@ -35,8 +35,6 @@ import type * as users from "../users.js";
  * ```
  */
 declare const fullApi: ApiFromModules<{
-  bugs: typeof bugs;
-  bugsTags: typeof bugsTags;
   comments: typeof comments;
   logs: typeof logs;
   priority: typeof priority;
@@ -45,7 +43,9 @@ declare const fullApi: ApiFromModules<{
   roles: typeof roles;
   status: typeof status;
   tags: typeof tags;
-  tasks: typeof tasks;
+  ticketType: typeof ticketType;
+  tickets: typeof tickets;
+  ticketsTags: typeof ticketsTags;
   users: typeof users;
 }>;
 export declare const api: FilterApi<

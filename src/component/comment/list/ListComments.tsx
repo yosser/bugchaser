@@ -7,12 +7,12 @@ import { AddComment } from "../add";
 import { ConfirmationModal } from "../../common/ConfirmationModal";
 
 interface ListCommentsProps {
-    bugId?: Id<"bugs">;
+    ticketId?: Id<"tickets">;
 }
 
-export const ListComments = ({ bugId }: ListCommentsProps) => {
+export const ListComments = ({ ticketId }: ListCommentsProps) => {
     const comments = useQuery(api.comments.get);
-    const bugs = useQuery(api.bugs.get);
+    const tickets = useQuery(api.tickets.get);
     const users = useQuery(api.users.get);
     const [commentToEdit, setCommentToEdit] = useState<Doc<"comments"> | null>(null);
     const [showAddComment, setShowAddComment] = useState(false);
@@ -36,7 +36,7 @@ export const ListComments = ({ bugId }: ListCommentsProps) => {
         setShowAddComment(true);
     };
 
-    const bugComments = comments?.filter(comment => bugId ? comment.bug === bugId && !comment.parentComment : !comment.parentComment) || [];
+    const ticketComments = comments?.filter(comment => ticketId ? comment.ticket === ticketId && !comment.parentComment : !comment.parentComment) || [];
 
     return (
         <div className="p-4">
@@ -57,7 +57,7 @@ export const ListComments = ({ bugId }: ListCommentsProps) => {
             )}
 
             <div className="space-y-4">
-                {bugComments.map((comment) => {
+                {ticketComments.map((comment) => {
                     const commentUser = users?.find(user => user._id === comment.user);
                     const replies = comments?.filter(reply => reply.parentComment === comment._id) || [];
 
@@ -72,7 +72,7 @@ export const ListComments = ({ bugId }: ListCommentsProps) => {
                                         {comment.createdAt ? new Date(comment.createdAt).toLocaleString() : 'N/A'}
                                     </span>
                                     <span className="text-sm text-gray-500 ml-2">
-                                        {bugs?.find(bug => bug._id === comment.bug)?.title || "N/A"}
+                                        {tickets?.find(ticket => ticket._id === comment.ticket)?.title || "N/A"}
                                     </span>
                                 </div>
                                 <div className="flex space-x-2">
@@ -143,7 +143,7 @@ export const ListComments = ({ bugId }: ListCommentsProps) => {
             </div>
 
             {commentToEdit && <EditComment comment={commentToEdit} onClose={() => setCommentToEdit(null)} />}
-            {showAddComment && <AddComment onClose={() => setShowAddComment(false)} bugId={bugId} parentComment={parentComment ?? undefined} />}
+            {showAddComment && <AddComment onClose={() => setShowAddComment(false)} ticketId={ticketId} parentComment={parentComment ?? undefined} />}
             <ConfirmationModal
                 isOpen={!!commentToDelete}
                 title="Delete Comment"
