@@ -30,7 +30,7 @@ export const EditComment = ({ comment, onClose }: EditCommentProps) => {
             await createLog({
                 action: "Comment edited",
                 user: currentUser?._id,
-                bug: comment.bug,
+                ticket: comment.ticket,
                 comment: comment._id,
             });
             onClose();

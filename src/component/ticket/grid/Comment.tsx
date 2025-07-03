@@ -37,7 +37,7 @@ export const Comment = ({ comment, users, level = 0, onReply }: CommentProps) =>
             await createLog({
                 action: "Comment edited",
                 user: currentUser?._id,
-                bug: comment.bug,
+                ticket: comment.ticket,
                 comment: comment._id,
             });
 

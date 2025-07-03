@@ -7,10 +7,10 @@ export const get = query({
     },
 });
 
-export const getByBug = query({
-    args: { bugId: v.optional(v.id("bugs")) },
+export const getByTicket = query({
+    args: { ticketId: v.optional(v.id("tickets")) },
     handler: async (ctx, args) => {
-        return await ctx.db.query("comments").filter((q) => q.eq(q.field("bug"), args.bugId)).collect();
+        return await ctx.db.query("comments").filter((q) => q.eq(q.field("ticket"), args.ticketId)).collect();
     },
 });
 export const getByUser = query({
@@ -30,7 +30,7 @@ export const getByParentComment = query({
 export const create = mutation({
     args: {
         text: v.string(),
-        bug: v.optional(v.id("bugs")),
+        ticket: v.optional(v.id("tickets")),
         user: v.optional(v.id("users")),
         parentComment: v.optional(v.id("comments")),
         isDeleted: v.optional(v.boolean()),
@@ -54,7 +54,7 @@ export const update = mutation({
     args: {
         id: v.id("comments"),
         text: v.string(),
-        bug: v.optional(v.id("bugs")),
+        ticket: v.optional(v.id("tickets")),
         user: v.optional(v.id("users")),
         parentComment: v.optional(v.id("comments")),
         isDeleted: v.optional(v.boolean()),

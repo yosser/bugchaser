@@ -6,29 +6,29 @@ import { HTML5Backend } from 'react-dnd-html5-backend';
 import { useDragRef } from "../../../hooks/hooks";
 import { api } from "../../../../convex/_generated/api";
 import type { Doc, Id } from "../../../../convex/_generated/dataModel";
-import { BugCard } from "./BugCard";
+import { TicketCard } from "./TicketCard";
 
 import { UserContext } from "../../../context/userContext";
 import type { IUserContext } from "../../../context/userContext";
 
 
-interface BugGridProps {
-    onBugClick?: (bug: Doc<"bugs">) => void;
-    setShowViewBug?: (bugId: Id<"bugs">) => void;
+interface TicketGridProps {
+    onTicketClick?: (ticket: Doc<"tickets">) => void;
+    setShowViewTicket?: (ticketId: Id<"tickets">) => void;
 }
 
 interface IAssignedToColumnProps {
     assignedTo: Doc<"users">;
-    bugs: Doc<"bugs">[];
-    onBugEdit?: (bug: Doc<"bugs">) => void;
-    onDrop: (bug: Doc<"bugs">, assignedToId: Id<"users">) => void;
-    setShowViewBug?: (bugId: Id<"bugs">) => void;
+    tickets: Doc<"tickets">[];
+    onTicketEdit?: (ticket: Doc<"tickets">) => void;
+    onDrop: (ticket: Doc<"tickets">, assignedToId: Id<"users">) => void;
+    setShowViewTicket?: (ticketId: Id<"tickets">) => void;
 }
 
-const AssignedToColumn = ({ assignedTo, bugs, onBugEdit, onDrop, setShowViewBug }: IAssignedToColumnProps) => {
+const AssignedToColumn = ({ assignedTo, tickets, onTicketEdit, onDrop, setShowViewTicket }: IAssignedToColumnProps) => {
     const [{ isOver }, drop] = useDrop(() => ({
-        accept: 'BUG',
-        drop: (item: Doc<"bugs">) => {
+        accept: 'TICKET',
+        drop: (item: Doc<"tickets">) => {
             onDrop(item, assignedTo._id);
         },
         collect: (monitor) => ({
@@ -36,7 +36,7 @@ const AssignedToColumn = ({ assignedTo, bugs, onBugEdit, onDrop, setShowViewBug 
         }),
     }));
     const handleDropRef = useDragRef(drop);
-    const columnBugs = bugs.filter(bug => bug.assignedTo === assignedTo._id);
+    const columnTickets = tickets.filter(ticket => ticket.assignedTo === assignedTo._id);
 
     return (<div ref={handleDropRef}
         className={`p-4 rounded-lg ${isOver ? 'bg-gray-100' : 'bg-gray-50'
@@ -44,13 +44,13 @@ const AssignedToColumn = ({ assignedTo, bugs, onBugEdit, onDrop, setShowViewBug 
     >
         <h3 className="text-lg font-semibold mb-4">{assignedTo.name}</h3>
         <div className="space-y-4">
-            {columnBugs.map((bug) => {
+            {columnTickets.map((ticket) => {
                 return (
-                    <BugCard
-                        key={bug._id}
-                        bug={bug}
-                        onEdit={onBugEdit}
-                        setShowViewBug={setShowViewBug}
+                    <TicketCard
+                        key={ticket._id}
+                        ticket={ticket}
+                        onEdit={onTicketEdit}
+                        setShowViewTicket={setShowViewTicket}
                     />
                 );
             })}
@@ -61,17 +61,17 @@ const AssignedToColumn = ({ assignedTo, bugs, onBugEdit, onDrop, setShowViewBug 
 
 interface IPriorityColumnProps {
     priority: Doc<"priority">;
-    bugs: Doc<"bugs">[];
-    onBugEdit?: (bug: Doc<"bugs">) => void;
-    onDrop: (bug: Doc<"bugs">, priorityId: Id<"priority">) => void;
-    setShowViewBug?: (bugId: Id<"bugs">) => void;
+    tickets: Doc<"tickets">[];
+    onTicketEdit?: (ticket: Doc<"tickets">) => void;
+    onDrop: (ticket: Doc<"tickets">, priorityId: Id<"priority">) => void;
+    setShowViewTicket?: (ticketId: Id<"tickets">) => void;
 }
 
-const PriorityColumn = ({ priority, bugs, onBugEdit, onDrop, setShowViewBug }: IPriorityColumnProps) => {
+const PriorityColumn = ({ priority, tickets, onTicketEdit, onDrop, setShowViewTicket }: IPriorityColumnProps) => {
     const dropRef = useRef<HTMLDivElement>(null);
     const [{ isOver }, drop] = useDrop(() => ({
-        accept: 'BUG',
-        drop: (item: Doc<"bugs">) => {
+        accept: 'TICKET',
+        drop: (item: Doc<"tickets">) => {
             onDrop(item, priority._id);
         },
         collect: (monitor) => ({
@@ -80,7 +80,7 @@ const PriorityColumn = ({ priority, bugs, onBugEdit, onDrop, setShowViewBug }: I
     }));
     drop(dropRef);
 
-    const columnBugs = bugs.filter(bug => bug.priority === priority._id);
+    const columnTickets = tickets.filter(ticket => ticket.priority === priority._id);
 
     return (
         <div
@@ -90,13 +90,13 @@ const PriorityColumn = ({ priority, bugs, onBugEdit, onDrop, setShowViewBug }: I
         >
             <h3 className="text-lg font-semibold mb-4">{priority.name}</h3>
             <div className="space-y-4">
-                {columnBugs.map((bug) => {
+                {columnTickets.map((ticket) => {
                     return (
-                        <BugCard
-                            key={bug._id}
-                            bug={bug}
-                            onEdit={onBugEdit}
-                            setShowViewBug={setShowViewBug}
+                        <TicketCard
+                            key={ticket._id}
+                            ticket={ticket}
+                            onEdit={onTicketEdit}
+                            setShowViewTicket={setShowViewTicket}
                         />
                     );
                 })}
@@ -107,16 +107,16 @@ const PriorityColumn = ({ priority, bugs, onBugEdit, onDrop, setShowViewBug }: I
 
 interface IStatusColumnProps {
     status: Doc<"status">;
-    bugs: Doc<"bugs">[];
-    onBugEdit?: (bug: Doc<"bugs">) => void;
-    onDrop: (bug: Doc<"bugs">, statusId: Id<"status">) => void;
-    setShowViewBug?: (bugId: Id<"bugs">) => void;
+    tickets: Doc<"tickets">[];
+    onTicketEdit?: (ticket: Doc<"tickets">) => void;
+    onDrop: (ticket: Doc<"tickets">, statusId: Id<"status">) => void;
+    setShowViewTicket?: (ticketId: Id<"tickets">) => void;
 }
 
-const StatusColumn = ({ status, bugs, onBugEdit, onDrop, setShowViewBug }: IStatusColumnProps) => {
+const StatusColumn = ({ status, tickets, onTicketEdit, onDrop, setShowViewTicket }: IStatusColumnProps) => {
     const [{ isOver }, drop] = useDrop(() => ({
-        accept: 'BUG',
-        drop: (item: Doc<"bugs">) => {
+        accept: 'TICKET',
+        drop: (item: Doc<"tickets">) => {
             onDrop(item, status._id);
         },
         collect: (monitor) => ({
@@ -125,7 +125,7 @@ const StatusColumn = ({ status, bugs, onBugEdit, onDrop, setShowViewBug }: IStat
     }));
     const handleDropRef = useDragRef(drop);
 
-    const columnBugs = bugs.filter(bug => bug.status === status._id);
+    const columnTickets = tickets.filter(ticket => ticket.status === status._id);
 
     return (
         <div
@@ -135,14 +135,14 @@ const StatusColumn = ({ status, bugs, onBugEdit, onDrop, setShowViewBug }: IStat
         >
             <h3 className="text-lg font-semibold mb-4">{status.name}</h3>
             <div className="space-y-4">
-                {columnBugs.map((bug) => {
+                {columnTickets.map((ticket) => {
 
                     return (
-                        <BugCard
-                            key={bug._id}
-                            bug={bug}
-                            onEdit={onBugEdit}
-                            setShowViewBug={setShowViewBug}
+                        <TicketCard
+                            key={ticket._id}
+                            ticket={ticket}
+                            onEdit={onTicketEdit}
+                            setShowViewTicket={setShowViewTicket}
                         />
                     );
                 })}
@@ -151,66 +151,66 @@ const StatusColumn = ({ status, bugs, onBugEdit, onDrop, setShowViewBug }: IStat
     );
 };
 
-export const BugGrid = ({ onBugClick, setShowViewBug }: BugGridProps) => {
+export const TicketGrid = ({ onTicketClick, setShowViewTicket }: TicketGridProps) => {
     const { currentUser, currentProject } = useContext<IUserContext>(UserContext);
     const [columnView, setColumnView] = useState<'status' | 'priority' | 'assignedTo'>('assignedTo');
-    const bugs = useQuery(api.bugs.getByProject, { projectId: currentProject?._id });
+    const tickets = useQuery(api.tickets.getByProject, { projectId: currentProject?._id });
     const users = useQuery(api.users.get);
     const statuses = useQuery(api.status.get);
     const priorities = useQuery(api.priority.get);
-    const updateBug = useMutation(api.bugs.update);
+    const updateTicket = useMutation(api.tickets.update);
     const createLog = useMutation(api.logs.create);
 
-    const handleDrop = async (bug: Doc<"bugs">, priorityId: Id<"priority">) => {
+    const handleDrop = async (ticket: Doc<"tickets">, priorityId: Id<"priority">) => {
         const priority = priorities?.find(p => p._id === priorityId);
 
         try {
-            await updateBug({
-                id: bug._id, priority: priorityId,
+            await updateTicket({
+                id: ticket._id, priority: priorityId,
             });
 
             await createLog({
-                action: `Bug priority changed to ${priority?.name}`,
+                action: `Ticket priority changed to ${priority?.name}`,
                 user: currentUser?._id,
-                bug: bug._id,
+                ticket: ticket._id,
             });
 
         } catch (error) {
-            console.error('Failed to update bug priority:', error);
+            console.error('Failed to update ticket priority:', error);
         }
     };
 
-    const handleDropStatus = async (bug: Doc<"bugs">, statusId: Id<"status">) => {
+    const handleDropStatus = async (ticket: Doc<"tickets">, statusId: Id<"status">) => {
         const status = statuses?.find(s => s._id === statusId);
 
         try {
-            await updateBug({ id: bug._id, status: statusId });
+            await updateTicket({ id: ticket._id, status: statusId });
             await createLog({
-                action: `Bug status changed to ${status?.name}`,
+                action: `Ticket status changed to ${status?.name}`,
                 user: currentUser?._id,
-                bug: bug._id,
+                ticket: ticket._id,
             });
         } catch (error) {
-            console.error('Failed to update bug status:', error);
+            console.error('Failed to update ticket status:', error);
         }
     };
 
-    const handleDropAssignedTo = async (bug: Doc<"bugs">, assignedToId: Id<"users">) => {
+    const handleDropAssignedTo = async (ticket: Doc<"tickets">, assignedToId: Id<"users">) => {
         const assignedTo = users?.find(u => u._id === assignedToId);
 
         try {
-            await updateBug({ id: bug._id, assignedTo: assignedToId });
+            await updateTicket({ id: ticket._id, assignedTo: assignedToId });
             await createLog({
-                action: `Bug assigned to ${assignedTo?.name}`,
+                action: `Ticket assigned to ${assignedTo?.name}`,
                 user: currentUser?._id,
-                bug: bug._id,
+                ticket: ticket._id,
             });
         } catch (error) {
-            console.error('Failed to update bug assigned to:', error);
+            console.error('Failed to update ticket assigned to:', error);
         }
     };
 
-    if (!bugs || !users || !statuses || !priorities) {
+    if (!tickets || !users || !statuses || !priorities) {
         return <div>Loading...</div>;
     }
 
@@ -256,10 +256,10 @@ export const BugGrid = ({ onBugClick, setShowViewBug }: BugGridProps) => {
                             <StatusColumn
                                 key={status._id}
                                 status={status}
-                                bugs={bugs}
-                                onBugEdit={onBugClick}
+                                tickets={tickets}
+                                onTicketEdit={onTicketClick}
                                 onDrop={handleDropStatus}
-                                setShowViewBug={setShowViewBug}
+                                setShowViewTicket={setShowViewTicket}
                             />
                         ))}
                     </div>
@@ -269,10 +269,10 @@ export const BugGrid = ({ onBugClick, setShowViewBug }: BugGridProps) => {
                             <AssignedToColumn
                                 key={user._id}
                                 assignedTo={user}
-                                bugs={bugs}
-                                onBugEdit={onBugClick}
+                                tickets={tickets}
+                                onTicketEdit={onTicketClick}
                                 onDrop={handleDropAssignedTo}
-                                setShowViewBug={setShowViewBug}
+                                setShowViewTicket={setShowViewTicket}
                             />
                         ))}
                     </div>
@@ -282,10 +282,10 @@ export const BugGrid = ({ onBugClick, setShowViewBug }: BugGridProps) => {
                             <PriorityColumn
                                 key={priority._id}
                                 priority={priority}
-                                bugs={bugs}
-                                onBugEdit={onBugClick}
+                                tickets={tickets}
+                                onTicketEdit={onTicketClick}
                                 onDrop={handleDrop}
-                                setShowViewBug={setShowViewBug}
+                                setShowViewTicket={setShowViewTicket}
                             />
                         ))}
                     </div>

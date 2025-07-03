@@ -3,44 +3,45 @@ import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import type { Doc, Id } from "../../../../convex/_generated/dataModel";
 import { UserContext } from "../../../context/userContext";
-import { AddBug } from "../add";
-import { EditBug } from "../edit";
+import { AddTicket } from "../add";
+import { EditTicket } from "../edit";
 import { ConfirmationModal } from "../../common/ConfirmationModal";
-import { BugGrid } from "../grid/BugGrid";
-import { BugList } from "./BugList";
-import { ViewBug } from "../view/ViewBug";
+import { TicketGrid } from "../grid/TicketGrid";
+import { TicketList } from "./TicketList";
+import { ViewTicket } from "../view/ViewTicket";
+
 type ViewMode = "grid" | "list";
 
-export const ListBugs = () => {
+export const ListTickets = () => {
     const { currentProject } = useContext(UserContext);
-    const bugs = useQuery(api.bugs.getByProject, { projectId: currentProject?._id });
-    const [showViewBug, setShowViewBug] = useState<Id<'bugs'> | null>(null);
-    const [showAddBug, setShowAddBug] = useState(false);
-    const [bugToEdit, setBugToEdit] = useState<Doc<"bugs"> | null>(null);
-    const [bugToDelete, setBugToDelete] = useState<Doc<"bugs"> | null>(null);
+    const tickets = useQuery(api.tickets.getByProject, { projectId: currentProject?._id });
+    const [showViewTicket, setShowViewTicket] = useState<Id<'tickets'> | null>(null);
+    const [showAddTicket, setShowAddTicket] = useState(false);
+    const [ticketToEdit, setTicketToEdit] = useState<Doc<"tickets"> | null>(null);
+    const [ticketToDelete, setTicketToDelete] = useState<Doc<"tickets"> | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [viewMode, setViewMode] = useState<ViewMode>("grid");
-    const deleteBug = useMutation(api.bugs.remove);
+    const deleteTicket = useMutation(api.tickets.remove);
 
-    const handleDelete = async (bugId: Id<"bugs">) => {
+    const handleDelete = async (ticketId: Id<"tickets">) => {
         try {
             setError(null);
-            await deleteBug({ id: bugId });
-            setBugToDelete(null);
+            await deleteTicket({ id: ticketId });
+            setTicketToDelete(null);
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Failed to delete bug");
+            setError(err instanceof Error ? err.message : "Failed to delete ticket");
         }
     };
 
-    const handleBugClick = (bug: Doc<"bugs">) => {
-        setShowViewBug(null);
-        setBugToEdit(bug);
+    const handleTicketClick = (ticket: Doc<"tickets">) => {
+        setShowViewTicket(null);
+        setTicketToEdit(ticket);
     };
 
     return (
         <div className="p-4">
             <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-semibold">Bugs</h2>
+                <h2 className="text-2xl font-semibold">Tickets</h2>
                 <div className="flex items-center space-x-4">
                     <div className="flex items-center space-x-2 bg-gray-100 rounded-lg p-1">
                         <button
@@ -63,10 +64,10 @@ export const ListBugs = () => {
                         </button>
                     </div>
                     <button
-                        onClick={() => setShowAddBug(true)}
+                        onClick={() => setShowAddTicket(true)}
                         className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
-                        Add Bug
+                        Add Ticket
                     </button>
                 </div>
             </div>
@@ -78,33 +79,33 @@ export const ListBugs = () => {
             )}
 
             {viewMode === "grid" ? (
-                <BugGrid onBugClick={handleBugClick} setShowViewBug={setShowViewBug} />
+                <TicketGrid onTicketClick={handleTicketClick} setShowViewTicket={setShowViewTicket} />
             ) : (
-                <BugList
-                    onEditBug={handleBugClick}
-                    onViewBug={(bug) => setShowViewBug(bug._id)}
+                <TicketList
+                    onEditTicket={handleTicketClick}
+                    onViewTicket={(ticket) => setShowViewTicket(ticket._id)}
                 />
             )}
-            {showViewBug && bugs?.find(b => b._id === showViewBug) && (
+            {showViewTicket && tickets?.find(t => t._id === showViewTicket) && (
                 <div className="fixed inset-0 bg-gray-500/75 flex items-center justify-center p-4 z-50">
                     <div className="relative w-full max-w-4xl">
-                        <ViewBug
-                            bugId={showViewBug}
-                            onEdit={handleBugClick}
-                            onClose={() => setShowViewBug(null)}
+                        <ViewTicket
+                            ticketId={showViewTicket}
+                            onEdit={handleTicketClick}
+                            onClose={() => setShowViewTicket(null)}
                         />
                     </div>
                 </div>
             )}
-            {showAddBug && <AddBug onClose={() => setShowAddBug(false)} />}
-            {bugToEdit && <EditBug bug={bugToEdit} onClose={() => setBugToEdit(null)} />}
+            {showAddTicket && <AddTicket onClose={() => setShowAddTicket(false)} />}
+            {ticketToEdit && <EditTicket ticket={ticketToEdit} onClose={() => setTicketToEdit(null)} />}
             <ConfirmationModal
-                isOpen={!!bugToDelete}
-                title="Delete Bug"
-                message={`Are you sure you want to delete "${bugToDelete?.title}"? This action cannot be undone.`}
+                isOpen={!!ticketToDelete}
+                title="Delete Ticket"
+                message={`Are you sure you want to delete "${ticketToDelete?.title}"? This action cannot be undone.`}
                 confirmText="Delete"
-                onConfirm={() => bugToDelete && handleDelete(bugToDelete._id)}
-                onCancel={() => setBugToDelete(null)}
+                onConfirm={() => ticketToDelete && handleDelete(ticketToDelete._id)}
+                onCancel={() => setTicketToDelete(null)}
                 variant="danger"
             />
         </div>
