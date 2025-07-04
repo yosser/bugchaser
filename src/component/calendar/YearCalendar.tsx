@@ -11,12 +11,12 @@ interface IYearCalendarProps {
 }
 
 export const YearCalendar: React.FC<IYearCalendarProps> = ({ onTicketClick }) => {
-    const { currentProject } = useContext(UserContext);
+    const { currentProject, currentEpic } = useContext(UserContext);
     const { currentDate, setCurrentDate, dateByViewMode } = useContext(CalendarContext);
     const [selectedDate, setSelectedDate] = useState<Date>(currentDate);
     const [draggedTicket, setDraggedTicket] = useState<Doc<"tickets"> | null>(null);
     const [dragOverDate, setDragOverDate] = useState<Date | null>(null);
-    const tickets = useQuery(api.tickets.getByProject, { projectId: currentProject?._id });
+    const tickets = useQuery(api.tickets.getByProjectEpic, { projectId: currentProject?._id ?? undefined, epicId: currentEpic?._id ?? undefined });
     const updateTicket = useMutation(api.tickets.update);
 
     // Get all months of the year

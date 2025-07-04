@@ -12,14 +12,14 @@ interface IWeekCalendarProps {
 }
 
 export const WeekCalendar: React.FC<IWeekCalendarProps> = ({ onTicketClick }) => {
-    const { currentProject } = useContext(UserContext);
+    const { currentProject, currentEpic } = useContext(UserContext);
     const { currentDate, setCurrentDate, dateByViewMode } = useContext(CalendarContext);
 
     const [selectedDate, setSelectedDate] = useState<Date>(currentDate);
     const [showAllDay, setShowAllDay] = useState(false);
     const [draggedTicket, setDraggedTicket] = useState<Doc<"tickets"> | null>(null);
     const [dragOverCell, setDragOverCell] = useState<{ day: Date; hour: number } | null>(null);
-    const tickets = useQuery(api.tickets.getByProject, { projectId: currentProject?._id });
+    const tickets = useQuery(api.tickets.getByProjectEpic, { projectId: currentProject?._id ?? undefined, epicId: currentEpic?._id ?? undefined });
     const updateTicket = useMutation(api.tickets.update);
 
     // Get the start of the week (Sunday)

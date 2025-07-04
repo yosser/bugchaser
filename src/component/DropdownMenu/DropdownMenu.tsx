@@ -20,8 +20,8 @@ export const DropdownMenu: React.FunctionComponent<TDropdownMenuProps> = ({ opti
 
     return (<div ref={mainRef} className="relative inline-block text-left">
         <div>
-            <button type="button" onClick={() => setIsOpen(!isOpen)} className="inline-flex w-full justify-center text-gray-200 hover:text-white px-3 py-2 rounded-md text-sm font-medium  focus:outline-none focus:ring-1 focus:ring-hvpd-pickled-bluewood focus:ring-offset-2 focus:ring-offset-gray-100" id="menu-button" >
-                <span className="text-dark-grey me-2">{options.find(o => o.value === selected)?.label || 'Select'}</span>
+            <button type="button" onClick={() => setIsOpen(!isOpen)} className="inline-flex w-full justify-center text-gray-200 hover:text-white px-3 py-2 rounded-md text-md font-medium focus:outline-none focus:ring-1 focus:ring-hvpd-pickled-bluewood focus:ring-offset-2 focus:ring-offset-gray-100" id="menu-button" >
+                <span className="text-dark-grey me-4">{options.find(o => o.value === selected)?.label || 'Select'}</span>
                 <em>▼</em>
             </button>
         </div>

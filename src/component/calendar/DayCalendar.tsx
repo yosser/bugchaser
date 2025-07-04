@@ -12,12 +12,12 @@ interface IDayCalendarProps {
 
 export const DayCalendar: React.FC<IDayCalendarProps> = ({ onTicketClick }) => {
     const { currentDate, setCurrentDate, dateByViewMode } = useContext(CalendarContext);
-    const { currentProject } = useContext(UserContext);
+    const { currentProject, currentEpic } = useContext(UserContext);
     const [selectedTime, setSelectedTime] = useState<number | null>(null);
     const [showAllDay, setShowAllDay] = useState(false);
     const [draggedTicket, setDraggedTicket] = useState<Doc<"tickets"> | null>(null);
     const [dragOverHour, setDragOverHour] = useState<number | null>(null);
-    const tickets = useQuery(api.tickets.getByProject, { projectId: currentProject?._id });
+    const tickets = useQuery(api.tickets.getByProjectEpic, { projectId: currentProject?._id, epicId: currentEpic?._id });
     const updateTicket = useMutation(api.tickets.update);
 
     // Generate time slots (6 AM to 10 PM, or 24 hours if showAllDay is true)

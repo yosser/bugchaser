@@ -7,9 +7,9 @@ import type { Id } from "../../../../convex/_generated/dataModel";
 import { UserContext } from "../../../context/userContext";
 
 export const ListLogs = () => {
-    const { currentProject } = useContext(UserContext);
+    const { currentProject, currentEpic } = useContext(UserContext);
     const users = useQuery(api.users.get);
-    const tickets = useQuery(api.tickets.getByProject, { projectId: currentProject?._id });
+    const tickets = useQuery(api.tickets.getByProjectEpic, { projectId: currentProject?._id ?? undefined, epicId: currentEpic?._id ?? undefined });
     const comments = useQuery(api.comments.get);
     const [logView, setLogView] = useState<'ticket' | 'comment' | 'user' | ''>('');
     const [filter, setFilter] = useState<Id<'tickets'> | Id<'comments'> | Id<'users'> | ''>('');

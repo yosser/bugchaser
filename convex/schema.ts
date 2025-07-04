@@ -76,7 +76,16 @@ export default defineSchema({
     reporter: v.optional(v.id("users")),
     type: v.id("ticketType"),
     assignedTo: v.optional(v.id("users")),
+    epic: v.optional(v.id("epics")),
     dueDate: v.optional(v.number()),
+    createdAt: v.optional(v.number()),
+    updatedAt: v.optional(v.number()),
+    isDeleted: v.optional(v.boolean()),
+  }).index("by_project", ["project"]).index("by_epic", ["epic"]).index("by_project_epic", ["project", "epic"]),
+
+  epics: defineTable({
+    name: v.string(),
+    description: v.optional(v.string()),
     createdAt: v.optional(v.number()),
     updatedAt: v.optional(v.number()),
     isDeleted: v.optional(v.boolean()),
@@ -96,5 +105,63 @@ export default defineSchema({
     createdAt: v.optional(v.number()),
     updatedAt: v.optional(v.number()),
   }),
-});
 
+  skills: defineTable({
+    name: v.string(),
+    description: v.optional(v.string()),
+    createdAt: v.optional(v.number()),
+    updatedAt: v.optional(v.number()),
+    isDeleted: v.optional(v.boolean()),
+  }),
+
+  skillsUsers: defineTable({
+    skill: v.id("skills"),
+    user: v.id("users"),
+    level: v.optional(v.number()),
+  }).index("by_skill", ["skill"]).index("by_user", ["user"]),
+
+  qualifications: defineTable({
+    name: v.string(),
+    description: v.optional(v.string()),
+    createdAt: v.optional(v.number()),
+    updatedAt: v.optional(v.number()),
+    isDeleted: v.optional(v.boolean()),
+  }),
+
+  qualificationsUsers: defineTable({
+    qualification: v.id("qualifications"),
+    user: v.id("users"),
+    expirationDate: v.optional(v.number()),
+    addedDate: v.optional(v.number()),
+  }).index("by_qualification", ["qualification"]).index("by_user", ["user"]),
+
+  certifications: defineTable({
+    name: v.string(),
+    description: v.optional(v.string()),
+    createdAt: v.optional(v.number()),
+    updatedAt: v.optional(v.number()),
+    isDeleted: v.optional(v.boolean()),
+  }),
+
+  certificationsUsers: defineTable({
+    certification: v.id("certifications"),
+    user: v.id("users"),
+    expirationDate: v.optional(v.number()),
+    addedDate: v.optional(v.number()),
+  }).index("by_certification", ["certification"]).index("by_user", ["user"]),
+
+  locations: defineTable({
+    name: v.string(),
+    description: v.optional(v.string()),
+    createdAt: v.optional(v.number()),
+    updatedAt: v.optional(v.number()),
+    isDeleted: v.optional(v.boolean()),
+  }),
+
+  locationsUsers: defineTable({
+    location: v.id("locations"),
+    user: v.id("users"),
+
+  }).index("by_location", ["location"]).index("by_user", ["user"]),
+
+});

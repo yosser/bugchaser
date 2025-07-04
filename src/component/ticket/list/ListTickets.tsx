@@ -13,8 +13,8 @@ import { ViewTicket } from "../view/ViewTicket";
 type ViewMode = "grid" | "list";
 
 export const ListTickets = () => {
-    const { currentProject } = useContext(UserContext);
-    const tickets = useQuery(api.tickets.getByProject, { projectId: currentProject?._id });
+    const { currentProject, currentEpic } = useContext(UserContext);
+    const tickets = useQuery(api.tickets.getByProjectEpic, { projectId: currentProject?._id ?? undefined, epicId: currentEpic?._id ?? undefined });
     const [showViewTicket, setShowViewTicket] = useState<Id<'tickets'> | null>(null);
     const [showAddTicket, setShowAddTicket] = useState(false);
     const [ticketToEdit, setTicketToEdit] = useState<Doc<"tickets"> | null>(null);

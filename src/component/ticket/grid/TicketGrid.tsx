@@ -152,9 +152,9 @@ const StatusColumn = ({ status, tickets, onTicketEdit, onDrop, setShowViewTicket
 };
 
 export const TicketGrid = ({ onTicketClick, setShowViewTicket }: TicketGridProps) => {
-    const { currentUser, currentProject } = useContext<IUserContext>(UserContext);
+    const { currentUser, currentProject, currentEpic } = useContext<IUserContext>(UserContext);
     const [columnView, setColumnView] = useState<'status' | 'priority' | 'assignedTo'>('assignedTo');
-    const tickets = useQuery(api.tickets.getByProject, { projectId: currentProject?._id });
+    const tickets = useQuery(api.tickets.getByProjectEpic, { projectId: currentProject?._id ?? undefined, epicId: currentEpic?._id ?? undefined });
     const users = useQuery(api.users.get);
     const statuses = useQuery(api.status.get);
     const priorities = useQuery(api.priority.get);

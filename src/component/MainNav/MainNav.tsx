@@ -9,10 +9,14 @@ export interface IMainNavProps {
 
 export const MainNav: React.FunctionComponent<IMainNavProps> = ({ setView, view }) => {
     let navNames = [{ label: 'Users', value: 'users' },
+    { label: 'Epics', value: 'epics' },
     { label: 'Tickets', value: 'tickets' },
+    { label: 'Locations', value: 'locations' },
     { label: 'Logs', value: 'logs' },
     { label: 'Projects', value: 'projects' },
+    { label: 'Qualifications', value: 'qualifications' },
     { label: 'Tags', value: 'tags' },
+    { label: 'Skills', value: 'skills' },
     { label: 'Comments', value: 'comments' },
     { label: 'Calendar', value: 'calendar' }];
 

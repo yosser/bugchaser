@@ -12,8 +12,9 @@ interface TicketListProps {
 }
 
 export const TicketList: React.FunctionComponent<TicketListProps> = ({ onViewTicket, onEditTicket }) => {
-    const { currentProject } = useContext(UserContext);
-    const tickets = useQuery(api.tickets.getByProject, { projectId: currentProject?._id });
+    const { currentProject, currentEpic } = useContext(UserContext);
+    const tickets = useQuery(api.tickets.getByProjectEpic, { projectId: currentProject?._id ?? undefined, epicId: currentEpic?._id ?? undefined });
+    const epics = useQuery(api.epics.get);
     const users = useQuery(api.users.get);
     const statuses = useQuery(api.status.get);
     const priorities = useQuery(api.priority.get);
@@ -36,17 +37,7 @@ export const TicketList: React.FunctionComponent<TicketListProps> = ({ onViewTic
     };
 
     return (
-        <div className="container mx-auto px-4 py-8">
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold text-gray-900">Tickets</h1>
-                <button
-                    onClick={() => setIsAddModalOpen(true)}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                    Add Ticket
-                </button>
-            </div>
-
+        <div className="container mx-auto px-4 py-4">
             <div className="bg-white shadow-md rounded-lg overflow-hidden">
                 <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
@@ -62,6 +53,9 @@ export const TicketList: React.FunctionComponent<TicketListProps> = ({ onViewTic
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Priority
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Epic
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Assigned To
@@ -88,6 +82,9 @@ export const TicketList: React.FunctionComponent<TicketListProps> = ({ onViewTic
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <div className="text-sm text-gray-500">{priorities?.find(p => p._id === ticket.priority)?.name}</div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                    <div className="text-sm text-gray-500">{epics?.find(e => e._id === ticket.epic)?.name}</div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <div className="text-sm text-gray-500">{users?.find(u => u._id === ticket.assignedTo)?.name}</div>
