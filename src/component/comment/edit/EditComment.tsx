@@ -2,6 +2,8 @@ import { useContext, useState } from "react";
 import type { Doc } from "../../../../convex/_generated/dataModel";
 import { useMutation } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
+import { useAppDispatch as useDispatch } from "../../../hooks";
+import { addToast } from "../../../store";
 import { UserContext } from "../../../context/userContext";
 import type { IUserContext } from "../../../context/userContext";
 
@@ -11,6 +13,7 @@ interface EditCommentProps {
 }
 
 export const EditComment = ({ comment, onClose }: EditCommentProps) => {
+    const dispatch = useDispatch();
     const { currentUser } = useContext<IUserContext>(UserContext);
     const [formData, setFormData] = useState({
         text: comment.text,
@@ -33,6 +36,7 @@ export const EditComment = ({ comment, onClose }: EditCommentProps) => {
                 ticket: comment.ticket,
                 comment: comment._id,
             });
+            dispatch(addToast("Comment updated"));
             onClose();
         } catch (error) {
             console.error("Failed to update comment:", error);

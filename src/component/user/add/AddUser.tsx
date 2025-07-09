@@ -1,13 +1,18 @@
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
+import { useAppDispatch as useDispatch } from "../../../hooks";
+import { addToast } from "../../../store";
+import { UserContext } from "../../../context/userContext";
 
 interface AddUserProps {
     onClose: () => void;
 }
 
 export const AddUser = ({ onClose }: AddUserProps) => {
+    const dispatch = useDispatch();
+    const { currentUser } = useContext(UserContext);
     const roles = useQuery(api.roles.get);
     const [formData, setFormData] = useState({
         name: "",
@@ -17,6 +22,7 @@ export const AddUser = ({ onClose }: AddUserProps) => {
     });
 
     const createUser = useMutation(api.users.create);
+    const createLog = useMutation(api.logs.create);
 
     const handleSubmit = async (e: React.FormEvent) => {
         if (!formData.role || !roles?.find(role => role._id === formData.role)) {
@@ -25,7 +31,12 @@ export const AddUser = ({ onClose }: AddUserProps) => {
         }
         e.preventDefault();
         try {
-            await createUser({ ...formData, role: roles?.find(role => role.name === formData.role)?._id as Id<"role"> });
+            await createUser({ ...formData, role: formData.role as Id<"role"> });
+            await createLog({
+                action: `User added ${formData.name}`,
+                user: currentUser?._id,
+            });
+            dispatch(addToast("User added"));
             onClose();
         } catch (error) {
             console.error("Failed to create user:", error);

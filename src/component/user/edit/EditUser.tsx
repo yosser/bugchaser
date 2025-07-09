@@ -1,9 +1,12 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import Select from "react-select";
 import type { MultiValue } from "react-select";
 import type { Id, Doc } from "../../../../convex/_generated/dataModel";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
+import { useAppDispatch as useDispatch } from "../../../hooks";
+import { addToast } from "../../../store";
+import { UserContext } from "../../../context/userContext";
 
 interface EditUserProps {
     user: Doc<"users">;
@@ -11,6 +14,8 @@ interface EditUserProps {
 }
 
 export const EditUser = ({ user, onClose }: EditUserProps) => {
+    const dispatch = useDispatch();
+    const { currentUser } = useContext(UserContext);
     const roles = useQuery(api.roles.get);
     const expandedUser = useQuery(api.users.getById, { id: user._id });
     const userQualifications = useQuery(api.qualificationsUsers.get, { user: user._id });
@@ -71,6 +76,7 @@ export const EditUser = ({ user, onClose }: EditUserProps) => {
     const addQualifications = useMutation(api.qualificationsUsers.create);
     const addSkill = useMutation(api.skillsUser.create);
     const addLocation = useMutation(api.locationsUsers.create);
+    const createLog = useMutation(api.logs.create);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -112,6 +118,11 @@ export const EditUser = ({ user, onClose }: EditUserProps) => {
                     ...newUser,
                 })
             ]);
+            await createLog({
+                action: `User updated ${user.name}`,
+                user: currentUser?._id,
+            });
+            dispatch(addToast("User updated"));
             onClose();
         } catch (error) {
             console.error("Failed to update user:", error);

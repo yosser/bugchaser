@@ -2,6 +2,8 @@ import { useState, useContext } from "react";
 import { useMutation } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import type { Id, Doc } from "../../../../convex/_generated/dataModel";
+import { useAppDispatch as useDispatch } from "../../../hooks";
+import { addToast } from "../../../store";
 import { UserContext } from "../../../context/userContext";
 import type { IUserContext } from "../../../context/userContext";
 
@@ -12,6 +14,7 @@ interface AddCommentProps {
 }
 
 export const AddComment = ({ onClose, ticketId, parentComment }: AddCommentProps) => {
+    const dispatch = useDispatch();
     const { currentUser } = useContext<IUserContext>(UserContext);
     const createComment = useMutation(api.comments.create);
     const createLog = useMutation(api.logs.create);
@@ -41,6 +44,7 @@ export const AddComment = ({ onClose, ticketId, parentComment }: AddCommentProps
                     comment: commentId,
                 });
             }
+            dispatch(addToast("Comment created"));
             onClose();
         } catch (error) {
             console.error("Failed to create comment:", error);

@@ -1,10 +1,8 @@
 import { useState } from "react";
-import { useDrag } from "react-dnd";
 import { useQuery } from "convex/react";
 import type { Id, Doc } from "../../../../convex/_generated/dataModel";
 import { AddComment } from "../../comment/add";
 import { api } from "../../../../convex/_generated/api";
-import { useDragRef } from "../../../hooks/hooks";
 import { DateTime } from "luxon";
 import { Comment } from "./Comment";
 
@@ -17,7 +15,7 @@ interface TicketCardProps {
 export const TicketCard = ({ ticket, onEdit, setShowViewTicket }: TicketCardProps) => {
     const [showAddComment, setShowAddComment] = useState(false);
     const [replyToComment, setReplyToComment] = useState<Doc<"comments"> | null>(null);
-
+    const [isDragging, setIsDragging] = useState(false);
     const users = useQuery(api.users.get) ?? [];
     const statuses = useQuery(api.status.get) ?? [];
     const priorities = useQuery(api.priority.get) ?? [];
@@ -31,14 +29,6 @@ export const TicketCard = ({ ticket, onEdit, setShowViewTicket }: TicketCardProp
     const status = statuses.find(s => s._id === ticket.status);
     const priority = priorities.find(p => p._id === ticket.priority);
     const [showComments, setShowComments] = useState(false);
-    const [{ isDragging }, drag] = useDrag(() => ({
-        type: 'TICKET',
-        item: ticket,
-        collect: (monitor) => ({
-            isDragging: !!monitor.isDragging(),
-        }),
-    }));
-    const handleDragRef = useDragRef(drag);
 
     const getStatusColour = (statusId: Id<"status">) => {
         const statusValue = statuses.find(s => s._id === statusId)?.value;
@@ -81,7 +71,19 @@ export const TicketCard = ({ ticket, onEdit, setShowViewTicket }: TicketCardProp
     return (
         <>
             <div
-                ref={handleDragRef}
+                draggable={true}
+                onDragStart={(e) => {
+                    e.stopPropagation();
+                    setIsDragging(true);
+                    e.dataTransfer.dropEffect = 'move';
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.setData('ticket', JSON.stringify(ticket));
+                }}
+                onDragEnd={(e) => {
+                    setIsDragging(false);
+                    e.dataTransfer.clearData();
+                    e.stopPropagation();
+                }}
                 className={`bg-white rounded-lg shadow p-4 mb-2 cursor-move ${isDragging ? 'opacity-50' : ''}`}
             >
                 <div className="flex justify-between items-start mb-2">

@@ -2,15 +2,17 @@ import { useContext, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import type { Doc, Id } from "../../../../convex/_generated/dataModel";
+import { useAppDispatch as useDispatch } from "../../../hooks";
+import { addToast } from "../../../store";
 import { UserContext } from "../../../context/userContext";
 import type { IUserContext } from "../../../context/userContext";
-
 interface EditTicketProps {
     ticket: Doc<"tickets">;
     onClose: () => void;
 }
 
 export const EditTicket = ({ ticket, onClose }: EditTicketProps) => {
+    const dispatch = useDispatch();
     const { currentUser } = useContext<IUserContext>(UserContext);
     const users = useQuery(api.users.get);
     const statuses = useQuery(api.status.get);
@@ -77,6 +79,7 @@ export const EditTicket = ({ ticket, onClose }: EditTicketProps) => {
                 user: currentUser?._id,
                 ticket: ticket._id,
             });
+            dispatch(addToast("Ticket updated"));
             onClose();
         } catch (error) {
             console.error("Failed to update ticket:", error);

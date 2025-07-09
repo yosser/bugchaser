@@ -1,23 +1,34 @@
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import type { Doc, Id } from "../../../../convex/_generated/dataModel";
+import { useAppDispatch as useDispatch } from "../../../hooks";
+import { addToast } from "../../../store";
+import { UserContext } from "../../../context/userContext";
 import { EditTag } from "../edit/EditTag";
 import { AddTag } from "../add/AddTag";
 import { ConfirmationModal } from "../../common/ConfirmationModal";
 
 export const ListTags: React.FunctionComponent = () => {
+    const dispatch = useDispatch();
+    const { currentUser } = useContext(UserContext);
     const tags = useQuery(api.tags.get);
     const [tagToEdit, setTagToEdit] = useState<Doc<"tags"> | null>(null);
     const [showAddTag, setShowAddTag] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [tagToDelete, setTagToDelete] = useState<Doc<"tags"> | null>(null);
     const deleteTag = useMutation(api.tags.remove);
+    const createLog = useMutation(api.logs.create);
 
     const handleDelete = async (tagId: Id<"tags">) => {
         try {
             setError(null);
             await deleteTag({ id: tagId });
+            await createLog({
+                action: `Tag deleted ${tags?.find(t => t._id === tagId)?.name}`,
+                user: currentUser?._id,
+            });
+            dispatch(addToast("Tag deleted"));
             setTagToDelete(null);
         } catch (err) {
             setError(err instanceof Error ? err.message : "Failed to delete tag");

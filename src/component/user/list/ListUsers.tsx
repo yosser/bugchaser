@@ -2,6 +2,8 @@ import { useState, useContext } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import type { Doc, Id } from "../../../../convex/_generated/dataModel";
+import { useAppDispatch as useDispatch } from "../../../hooks";
+import { addToast } from "../../../store";
 import { EditUser } from "../edit";
 import { AddUser } from "../add";
 import { ConfirmationModal } from "../../common/ConfirmationModal";
@@ -9,6 +11,7 @@ import { UserContext } from "../../../context/userContext";
 import type { IUserContext } from "../../../context/userContext";
 
 export const ListUsers = () => {
+    const dispatch = useDispatch();
     const { currentUser } = useContext<IUserContext>(UserContext);
     const users = useQuery(api.users.get);
     const roles = useQuery(api.roles.get);
@@ -17,12 +20,18 @@ export const ListUsers = () => {
     const [error, setError] = useState<string | null>(null);
     const [userToDelete, setUserToDelete] = useState<Doc<"users"> | null>(null);
     const deleteUser = useMutation(api.users.remove);
+    const createLog = useMutation(api.logs.create);
 
     const handleDelete = async (userId: Id<"users">) => {
         try {
             setError(null);
             await deleteUser({ id: userId });
+            await createLog({
+                action: `User deleted ${userToDelete?.name}`,
+                user: currentUser?._id,
+            });
             setUserToDelete(null);
+            dispatch(addToast("User deleted"));
         } catch (err) {
             setError(err instanceof Error ? err.message : "Failed to delete user");
         }

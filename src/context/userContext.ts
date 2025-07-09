@@ -6,8 +6,8 @@ export interface IUserContext {
     setCurrentUser: (user: Doc<"users">) => void;
     currentProject: Doc<"projects"> | undefined;
     setCurrentProject: (project: Doc<"projects">) => void;
-    currentEpic: Doc<"epics"> | null;
+    currentEpic: Doc<"epics"> | undefined;
     setCurrentEpic: (epic: Doc<"epics">) => void;
 }
 
-export const UserContext = createContext<IUserContext>({ currentUser: null, setCurrentUser: () => { }, currentProject: undefined, setCurrentProject: () => { }, currentEpic: null, setCurrentEpic: () => { } });
+export const UserContext = createContext<IUserContext>({ currentUser: null, setCurrentUser: () => { }, currentProject: undefined, setCurrentProject: () => { }, currentEpic: undefined, setCurrentEpic: () => { } });

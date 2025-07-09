@@ -1,20 +1,25 @@
-import { useState } from "react";
+import { useContext, useState } from "react";
 import type { Doc } from "../../../../convex/_generated/dataModel";
 import { useMutation } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
-
+import { useAppDispatch as useDispatch } from "../../../hooks";
+import { addToast } from "../../../store";
+import { UserContext } from "../../../context/userContext";
 interface EditTagProps {
     tag: Doc<"tags">;
     onClose: () => void;
 }
 
 export const EditTag = ({ tag, onClose }: EditTagProps) => {
+    const dispatch = useDispatch();
+    const { currentUser } = useContext(UserContext);
     const [formData, setFormData] = useState({
         name: tag.name,
         color: tag.color || "#3B82F6", // Default blue color if no color is set
     });
 
     const updateTag = useMutation(api.tags.update);
+    const createLog = useMutation(api.logs.create);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -23,6 +28,11 @@ export const EditTag = ({ tag, onClose }: EditTagProps) => {
                 id: tag._id,
                 ...formData
             });
+            await createLog({
+                action: `Tag updated ${formData.name}`,
+                user: currentUser?._id,
+            });
+            dispatch(addToast("Tag updated"));
             onClose();
         } catch (error) {
             console.error("Failed to update tag:", error);

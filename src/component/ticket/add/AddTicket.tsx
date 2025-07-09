@@ -2,6 +2,8 @@ import { useContext, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
+import { useAppDispatch as useDispatch } from "../../../hooks";
+import { addToast } from "../../../store";
 import { UserContext } from "../../../context/userContext";
 import type { IUserContext } from "../../../context/userContext";
 
@@ -10,6 +12,7 @@ interface AddTicketProps {
 }
 
 export const AddTicket = ({ onClose }: AddTicketProps) => {
+    const dispatch = useDispatch();
     const { currentUser, currentProject } = useContext<IUserContext>(UserContext);
     const users = useQuery(api.users.get);
     const statuses = useQuery(api.status.get);
@@ -68,6 +71,7 @@ export const AddTicket = ({ onClose }: AddTicketProps) => {
                     user: currentUser?._id,
                     ticket: ticketId,
                 });
+                dispatch(addToast("Ticket created"));
             }
             onClose();
         } catch (error) {

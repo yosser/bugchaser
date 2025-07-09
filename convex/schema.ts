@@ -34,11 +34,13 @@ export default defineSchema({
   status: defineTable({
     name: v.string(),
     value: v.number(),
+    description: v.optional(v.string()),
   }),
 
   priority: defineTable({
     name: v.string(),
     value: v.number(),
+    description: v.optional(v.string()),
   }),
 
   role: defineTable({

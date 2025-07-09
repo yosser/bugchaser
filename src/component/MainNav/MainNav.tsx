@@ -14,6 +14,7 @@ export const MainNav: React.FunctionComponent<IMainNavProps> = ({ setView, view 
     { label: 'Locations', value: 'locations' },
     { label: 'Logs', value: 'logs' },
     { label: 'Projects', value: 'projects' },
+    { label: 'Project dashboard', value: 'dashboard' },
     { label: 'Qualifications', value: 'qualifications' },
     { label: 'Tags', value: 'tags' },
     { label: 'Skills', value: 'skills' },

@@ -11,6 +11,14 @@ import { ConfirmationModal } from "../../common/ConfirmationModal";
 import type { Id } from "../../../../convex/_generated/dataModel";
 
 
+const Tickets: React.FC<{ projectId: Id<"projects"> | undefined, epicId: Id<"epics"> | undefined }> = ({ projectId, epicId }) => {
+    const tickets = useQuery(api.tickets.getByProjectEpic, { projectId, epicId });
+    return <div>
+        <div className="text-sm text-gray-800">{tickets?.length} ticket{tickets?.length === 1 ? "" : "s"}</div>
+        {tickets?.map(ticket => <div key={ticket._id}>{ticket.title}</div>)}
+    </div>
+}
+
 export const ListEpics = () => {
     const { currentProject } = useContext(UserContext);
     const [epicToEdit, setEpicToEdit] = useState<Doc<"epics"> | null>(null);
@@ -43,6 +51,7 @@ export const ListEpics = () => {
             setError(err instanceof Error ? err.message : "Failed to retire epic");
         }
     };
+
 
     return (
         <div className="container mx-auto px-4 py-8">
@@ -82,6 +91,9 @@ export const ListEpics = () => {
                                 Is deleted
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Tickets
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Actions
                             </th>
                         </tr>
@@ -112,6 +124,11 @@ export const ListEpics = () => {
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <div className="text-sm text-gray-500">
                                         {epic.isDeleted ? "Yes" : "No"}
+                                    </div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                    <div className="text-sm text-gray-500">
+                                        <Tickets projectId={currentProject?._id ?? undefined} epicId={epic._id ?? undefined} />
                                     </div>
                                 </td>
                                 <td>

@@ -2,6 +2,8 @@ import { useState, useContext } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import type { Id, Doc } from "../../../../convex/_generated/dataModel";
+import { useAppDispatch as useDispatch } from "../../../hooks";
+import { addToast } from "../../../store";
 import { AddTicket } from "../add/AddTicket.tsx";
 
 import { UserContext } from "../../../context/userContext";
@@ -12,7 +14,8 @@ interface TicketListProps {
 }
 
 export const TicketList: React.FunctionComponent<TicketListProps> = ({ onViewTicket, onEditTicket }) => {
-    const { currentProject, currentEpic } = useContext(UserContext);
+    const dispatch = useDispatch();
+    const { currentProject, currentEpic, currentUser } = useContext(UserContext);
     const tickets = useQuery(api.tickets.getByProjectEpic, { projectId: currentProject?._id ?? undefined, epicId: currentEpic?._id ?? undefined });
     const epics = useQuery(api.epics.get);
     const users = useQuery(api.users.get);
@@ -20,6 +23,7 @@ export const TicketList: React.FunctionComponent<TicketListProps> = ({ onViewTic
     const priorities = useQuery(api.priority.get);
     const ticketTypes = useQuery(api.ticketType.get);
     const removeTicket = useMutation(api.tickets.remove);
+    const createLog = useMutation(api.logs.create);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
     if (!currentProject) {
@@ -30,6 +34,12 @@ export const TicketList: React.FunctionComponent<TicketListProps> = ({ onViewTic
         if (window.confirm("Are you sure you want to delete this ticket?")) {
             try {
                 await removeTicket({ id });
+                await createLog({
+                    action: "Ticket deleted",
+                    user: currentUser?._id,
+                    ticket: id,
+                });
+                dispatch(addToast("Ticket deleted"));
             } catch (error) {
                 console.error("Failed to delete ticket:", error);
             }

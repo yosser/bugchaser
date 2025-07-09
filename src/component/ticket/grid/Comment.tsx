@@ -3,6 +3,8 @@ import { useQuery, useMutation } from "convex/react";
 import type { Doc } from "../../../../convex/_generated/dataModel";
 import { api } from "../../../../convex/_generated/api";
 import { DateTime } from "luxon";
+import { useAppDispatch as useDispatch } from "../../../hooks";
+import { addToast } from "../../../store";
 import { UserContext } from "../../../context/userContext";
 import type { IUserContext } from "../../../context/userContext";
 
@@ -14,6 +16,7 @@ interface CommentProps {
 }
 
 export const Comment = ({ comment, users, level = 0, onReply }: CommentProps) => {
+    const dispatch = useDispatch();
     const { currentUser } = useContext<IUserContext>(UserContext);
     const user = users.find(u => u._id === comment.user);
     const replies = useQuery(api.comments.get)?.filter(c => c.parentComment === comment._id && !c.isDeleted) ?? [];
@@ -40,7 +43,7 @@ export const Comment = ({ comment, users, level = 0, onReply }: CommentProps) =>
                 ticket: comment.ticket,
                 comment: comment._id,
             });
-
+            dispatch(addToast("Comment updated"));
             setIsEditing(false);
         } catch (error) {
             console.error("Failed to update comment:", error);

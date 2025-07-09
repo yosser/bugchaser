@@ -1,5 +1,6 @@
 import { useContext, useEffect, useState } from "react";
-import type { Doc } from "../../../convex/_generated/dataModel"
+
+import type { Doc } from "../../../convex/_generated/dataModel";
 import { UserContext } from "../../context/userContext";
 import { CalendarContext } from "../../context/calendarContext";
 import { MonthCalendar } from "./MonthCalendar";
@@ -41,6 +42,7 @@ export const Calendar: React.FC = () => {
     };
 
     return <div className="p-4">
+
         <CalendarContext.Provider value={{ currentDate, setCurrentDate, dateByViewMode, setDateByViewMode }}>
             <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-semibold">Calendar</h2>

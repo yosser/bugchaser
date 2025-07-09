@@ -1,1 +1,1 @@
-export { useOnClickOutside } from './hooks';
+export { useAppDispatch, useAppSelector, useOnClickOutside } from './hooks';

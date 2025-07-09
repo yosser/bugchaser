@@ -3,6 +3,8 @@ import { DateTime } from "luxon";
 import { api } from "../../../convex/_generated/api";
 import type { Doc } from "../../../convex/_generated/dataModel"
 import { useQuery, useMutation } from "convex/react";
+import { useAppDispatch as useDispatch } from "../../hooks";
+import { addToast } from "../../store";
 import { UserContext } from "../../context/userContext";
 import { CalendarContext } from "../../context/calendarContext";
 
@@ -11,14 +13,17 @@ interface IDayCalendarProps {
 }
 
 export const DayCalendar: React.FC<IDayCalendarProps> = ({ onTicketClick }) => {
+    const dispatch = useDispatch();
     const { currentDate, setCurrentDate, dateByViewMode } = useContext(CalendarContext);
-    const { currentProject, currentEpic } = useContext(UserContext);
+    const { currentProject, currentEpic, currentUser } = useContext(UserContext);
     const [selectedTime, setSelectedTime] = useState<number | null>(null);
     const [showAllDay, setShowAllDay] = useState(false);
     const [draggedTicket, setDraggedTicket] = useState<Doc<"tickets"> | null>(null);
     const [dragOverHour, setDragOverHour] = useState<number | null>(null);
     const tickets = useQuery(api.tickets.getByProjectEpic, { projectId: currentProject?._id, epicId: currentEpic?._id });
     const updateTicket = useMutation(api.tickets.update);
+    const createLog = useMutation(api.logs.create);
+
 
     // Generate time slots (6 AM to 10 PM, or 24 hours if showAllDay is true)
     const getTimeSlots = () => {
@@ -68,6 +73,13 @@ export const DayCalendar: React.FC<IDayCalendarProps> = ({ onTicketClick }) => {
                     id: draggedTicket._id,
                     dueDate: newDueDate
                 });
+                await createLog({
+                    action: "Ticket due date updated",
+                    user: currentUser?._id,
+                    ticket: draggedTicket._id,
+                });
+                dispatch(addToast("Ticket due date updated"));
+
             } catch (error) {
                 console.error('Failed to update ticket due date:', error);
             }
