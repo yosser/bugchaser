@@ -144,6 +144,7 @@ export const ProjectTickets = () => {
         };
         option.series = [{
             colorBy: 'series',
+
             data: tickets.reduce((acc, ticket) => {
                 let index = 0;
                 if (ticketBy === 'status') {

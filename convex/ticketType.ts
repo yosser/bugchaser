@@ -7,11 +7,20 @@ export const get = query({
     },
 });
 
+export const getById = query({
+    args: { id: v.id("ticketType") },
+    handler: async (ctx, args) => {
+        return await ctx.db.get(args.id);
+    },
+});
+
 export const create = mutation({
     args: {
         name: v.string(),
         value: v.number(),
         description: v.string(),
+        colour: v.optional(v.string()),
+        textColour: v.optional(v.string()),
         isDeleted: v.boolean(),
     },
     handler: async (ctx, args) => {
@@ -27,6 +36,8 @@ export const update = mutation({
         name: v.optional(v.string()),
         value: v.optional(v.number()),
         description: v.optional(v.string()),
+        colour: v.optional(v.string()),
+        textColour: v.optional(v.string()),
         isDeleted: v.optional(v.boolean()),
     },
     handler: async (ctx, args) => {

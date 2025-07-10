@@ -46,11 +46,15 @@ export const create = mutation({
         dueDate: v.optional(v.number()),
         epic: v.optional(v.id("epics")),
         project: v.id("projects"),
+        estimatedTimeHours: v.optional(v.int64()),
+        actualTimeHours: v.optional(v.int64()),
     },
     handler: async (ctx, args) => {
         const now = Date.now();
         return await ctx.db.insert("tickets", {
             ...args,
+            estimatedTimeHours: args?.estimatedTimeHours ? BigInt(args.estimatedTimeHours) : undefined,
+            actualTimeHours: args?.actualTimeHours ? BigInt(args.actualTimeHours) : undefined,
             createdAt: now,
             updatedAt: now,
         });
@@ -69,11 +73,16 @@ export const update = mutation({
         epic: v.optional(v.id("epics")),
         assignedTo: v.optional(v.id("users")),
         dueDate: v.optional(v.number()),
+        estimatedTimeHours: v.optional(v.int64()),
+        actualTimeHours: v.optional(v.int64()),
     },
     handler: async (ctx, args) => {
         const { id, ...data } = args;
         return await ctx.db.patch(id, {
             ...data,
+            estimatedTimeHours: args?.estimatedTimeHours ? BigInt(args.estimatedTimeHours) : undefined,
+            actualTimeHours: args?.actualTimeHours ? BigInt(args.actualTimeHours) : undefined,
+
             updatedAt: Date.now(),
         });
     },

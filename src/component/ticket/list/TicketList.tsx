@@ -30,6 +30,29 @@ export const TicketList: React.FunctionComponent<TicketListProps> = ({ onViewTic
         return <div className="p-4 text-gray-500">Please select a project to view tickets.</div>;
     }
 
+    const getStatusColour = (statusId: Id<"status">): React.CSSProperties => {
+        const statusValue = (statuses ?? []).find(s => s._id === statusId);
+        if (!statusValue) {
+            return { backgroundColor: '#f8fafc', color: '#888a8c' };
+        }
+        return { backgroundColor: statusValue.colour, color: statusValue.textColour };
+    };
+
+    const getPriorityColour = (priorityId: Id<"priority">): React.CSSProperties => {
+        const priorityValue = (priorities ?? []).find(p => p._id === priorityId);
+        if (!priorityValue) {
+            return { backgroundColor: '#f8fafc', color: '#888a8c' };
+        }
+        return { backgroundColor: priorityValue.colour, color: priorityValue.textColour };
+    };
+
+    const getTicketTypeColour = (ticketTypeId: Id<"ticketType">): React.CSSProperties => {
+        const ticketTypeValue = (ticketTypes ?? []).find(t => t._id === ticketTypeId);
+        if (!ticketTypeValue) {
+            return { backgroundColor: '#f8fafc', color: '#888a8c' };
+        }
+        return { backgroundColor: ticketTypeValue.colour, color: ticketTypeValue.textColour };
+    };
     const handleDelete = async (id: Id<"tickets">) => {
         if (window.confirm("Are you sure you want to delete this ticket?")) {
             try {
@@ -85,13 +108,13 @@ export const TicketList: React.FunctionComponent<TicketListProps> = ({ onViewTic
                                     <div className="text-sm font-medium text-gray-900">{ticket.title}</div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className="text-sm text-gray-500">{ticketTypes?.find(t => t._id === ticket.type)?.name}</div>
+                                    <div className="px-2 py-1 text-xs font-medium rounded-full" style={getTicketTypeColour(ticket.type)}>{ticketTypes?.find(t => t._id === ticket.type)?.name}</div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className="text-sm text-gray-500">{statuses?.find(s => s._id === ticket.status)?.name}</div>
+                                    <div className="px-2 py-1 text-xs font-medium rounded-full" style={getStatusColour(ticket.status)}>{statuses?.find(s => s._id === ticket.status)?.name}</div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className="text-sm text-gray-500">{priorities?.find(p => p._id === ticket.priority)?.name}</div>
+                                    <div className="px-2 py-1 text-xs font-medium rounded-full" style={getPriorityColour(ticket.priority)}>{priorities?.find(p => p._id === ticket.priority)?.name}</div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <div className="text-sm text-gray-500">{epics?.find(e => e._id === ticket.epic)?.name}</div>

@@ -33,6 +33,8 @@ export const AddTicket = ({ onClose }: AddTicketProps) => {
         epic: epics?.[0]?._id ?? "" as Id<"epics">,
         reporter: currentUser?._id ?? "" as Id<"users">,
         assignedTo: currentUser?._id ?? "" as Id<"users">,
+        estimatedTimeHours: undefined,
+        actualTimeHours: undefined,
         dueDate: undefined,
     });
 
@@ -55,6 +57,8 @@ export const AddTicket = ({ onClose }: AddTicketProps) => {
                 type: formData.type,
                 project: currentProject?._id ?? "" as Id<"projects">,
                 dueDate: formData.dueDate ? new Date(formData.dueDate).getTime() : undefined,
+                estimatedTimeHours: formData.estimatedTimeHours ? BigInt(formData.estimatedTimeHours) : undefined,
+                actualTimeHours: formData.actualTimeHours ? BigInt(formData.actualTimeHours) : undefined,
             });
 
             if (ticketId) {
@@ -236,6 +240,32 @@ export const AddTicket = ({ onClose }: AddTicketProps) => {
                                 id="dueDate"
                                 name="dueDate"
                                 value={formData.dueDate}
+                                onChange={handleChange}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                        </div>
+                        <div>
+                            <label htmlFor="estimatedTimeHours" className="block text-sm font-medium text-gray-700 mb-1">
+                                Estimated Time (hours)
+                            </label>
+                            <input
+                                type="number"
+                                id="estimatedTimeHours"
+                                name="estimatedTimeHours"
+                                value={formData.estimatedTimeHours ?? undefined}
+                                onChange={handleChange}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                        </div>
+                        <div>
+                            <label htmlFor="actualTimeHours" className="block text-sm font-medium text-gray-700 mb-1">
+                                Actual Time (hours)
+                            </label>
+                            <input
+                                type="number"
+                                id="actualTimeHours"
+                                name="actualTimeHours"
+                                value={formData.actualTimeHours ?? undefined}
                                 onChange={handleChange}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                             />

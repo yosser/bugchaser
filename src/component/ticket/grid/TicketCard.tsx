@@ -30,38 +30,29 @@ export const TicketCard = ({ ticket, onEdit, setShowViewTicket }: TicketCardProp
     const priority = priorities.find(p => p._id === ticket.priority);
     const [showComments, setShowComments] = useState(false);
 
-    const getStatusColour = (statusId: Id<"status">) => {
-        const statusValue = statuses.find(s => s._id === statusId)?.value;
-        switch (statusValue) {
-            case 1:
-                return 'bg-green-100 text-green-800';
-            case 2:
-                return 'bg-blue-100 text-blue-800';
-            case 3:
-                return 'bg-light-blue-100 text-light-blue-800';
-            case 4:
-                return 'bg-red-100 text-red-800';
-            case 5:
-                return 'bg-light-green-100 text-light-green-800';
-            default:
-                return 'bg-grey-100 text-grey-800';
+    const getStatusColour = (statusId: Id<"status">): React.CSSProperties => {
+        const statusValue = statuses.find(s => s._id === statusId);
+        if (!statusValue) {
+            return { backgroundColor: '#f8fafc', color: '#888a8c' };
         }
+        return { backgroundColor: statusValue.colour, color: statusValue.textColour };
+
     };
 
-    const getPriorityColour = (priorityId: Id<"priority">) => {
-        const priorityValue = priorities.find(p => p._id === priorityId)?.value;
-        switch (priorityValue) {
-            case 1:
-                return 'bg-red-100 text-red-800';
-            case 2:
-                return 'bg-orange-100 text-orange-800';
-            case 3:
-                return 'bg-yellow-100 text-yellow-800';
-            case 4:
-                return 'bg-green-100 text-green-800';
-            default:
-                return 'bg-grey-100 text-grey-800';
+    const getPriorityColour = (priorityId: Id<"priority">): React.CSSProperties => {
+        const priorityValue = priorities.find(p => p._id === priorityId);
+        if (!priorityValue) {
+            return { backgroundColor: '#f8fafc', color: '#888a8c' };
         }
+        return { backgroundColor: priorityValue.colour, color: priorityValue.textColour };
+    };
+
+    const getTicketTypeColour = (ticketTypeId: Id<"ticketType">): React.CSSProperties => {
+        const ticketTypeValue = ticketTypes.find(t => t._id === ticketTypeId);
+        if (!ticketTypeValue) {
+            return { backgroundColor: '#f8fafc', color: '#888a8c' };
+        }
+        return { backgroundColor: ticketTypeValue.colour, color: ticketTypeValue.textColour };
     };
 
     const getCommentsForTicket = () => {
@@ -113,13 +104,13 @@ export const TicketCard = ({ ticket, onEdit, setShowViewTicket }: TicketCardProp
                 </div>
 
                 <div className="flex flex-wrap gap-2 mb-2">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColour(ticket.status)}`}>
+                    <span className='px-2 py-1 text-xs font-medium rounded-full' style={getStatusColour(ticket.status)}>
                         {status?.name}
                     </span>
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getPriorityColour(ticket.priority)}`}>
+                    <span className='px-2 py-1 text-xs font-medium rounded-full' style={getPriorityColour(ticket.priority)}>
                         {priority?.name}
                     </span>
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800`}>
+                    <span className={`px-2 py-1 text-xs font-medium rounded-full`} style={getTicketTypeColour(ticket.type)}>
                         {ticketTypes.find(t => t._id === ticket.type)?.name}
                     </span>
                     {ticketTags.map(ticketTag => {
@@ -182,7 +173,7 @@ export const TicketCard = ({ ticket, onEdit, setShowViewTicket }: TicketCardProp
                         </div>
                     )}
                 </div>
-            </div>
+            </div >
 
             {showAddComment && (
                 <AddComment
@@ -193,7 +184,8 @@ export const TicketCard = ({ ticket, onEdit, setShowViewTicket }: TicketCardProp
                     }}
                     parentComment={replyToComment ?? undefined}
                 />
-            )}
+            )
+            }
         </>
     );
 }; 

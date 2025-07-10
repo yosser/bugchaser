@@ -28,19 +28,27 @@ export default defineSchema({
     name: v.string(),
     value: v.number(),
     description: v.optional(v.string()),
+    colour: v.optional(v.string()),
+    textColour: v.optional(v.string()),
     isDeleted: v.optional(v.boolean()),
   }),
 
   status: defineTable({
     name: v.string(),
     value: v.number(),
+    colour: v.optional(v.string()),
+    textColour: v.optional(v.string()),
     description: v.optional(v.string()),
+    isDeleted: v.optional(v.boolean()),
   }),
 
   priority: defineTable({
     name: v.string(),
     value: v.number(),
+    colour: v.optional(v.string()),
+    textColour: v.optional(v.string()),
     description: v.optional(v.string()),
+    isDeleted: v.optional(v.boolean()),
   }),
 
   role: defineTable({
@@ -82,6 +90,8 @@ export default defineSchema({
     dueDate: v.optional(v.number()),
     createdAt: v.optional(v.number()),
     updatedAt: v.optional(v.number()),
+    estimatedTimeHours: v.optional(v.int64()),
+    actualTimeHours: v.optional(v.int64()),
     isDeleted: v.optional(v.boolean()),
   }).index("by_project", ["project"]).index("by_epic", ["epic"]).index("by_project_epic", ["project", "epic"]),
 

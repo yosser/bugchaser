@@ -7,6 +7,7 @@ import { MonthCalendar } from "./MonthCalendar";
 import { WeekCalendar } from "./WeekCalendar";
 import { YearCalendar } from "./YearCalendar";
 import { DayCalendar } from "./DayCalendar";
+import { ListView } from "./ListView";
 import { EditTicket, ViewTicket } from "../ticket";
 
 type ViewMode = "list" | "day" | "week" | "month" | "year";
@@ -72,6 +73,7 @@ export const Calendar: React.FC = () => {
                     </div>
                 </div>
             </div>
+            {viewMode === "list" && <ListView onTicketClick={handleTicketClick} />}
             {viewMode === "month" && <MonthCalendar onTicketClick={handleTicketClick} />}
             {viewMode === "week" && <WeekCalendar onTicketClick={handleTicketClick} />}
             {viewMode === "year" && <YearCalendar onTicketClick={handleTicketClick} />}

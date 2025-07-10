@@ -6,9 +6,9 @@ import { store } from './store/store';
 
 import {
   Calendar, ListComments, ListEpics, ListTickets, ListLogs,
-  ListLocations,
+  ListLocations, ListPriorities,
   ListQualifications, ListTags, ProjectList, UserList, MainNav,
-  ListSkills, ProjectDashboard,
+  ListSkills, ProjectDashboard, ListStatus, ListTicketType,
   ToastList,
 } from "./component";
 
@@ -79,11 +79,11 @@ const defaultStatuses = [
 ];
 
 const defaultPriorities = [
-  { name: "Trivial", value: 1, description: "A priority that represents a task that is low." },
-  { name: "Minor", value: 2, description: "A priority that represents a task that is medium." },
-  { name: "Major", value: 3, description: "A priority that represents a task that is high." },
-  { name: "Blocker", value: 4, description: "A priority that represents a task that is blocked." },
-  { name: "Critical", value: 5, description: "A priority that represents a task that is critical." },
+  { name: "Trivial", value: 1, description: "A priority that represents a task that is low.", color: "#f0fdf4", textColor: "#16a34a" },
+  { name: "Minor", value: 2, description: "A priority that represents a task that is medium.", color: "#fffbeb", textColor: "#d97706" },
+  { name: "Major", value: 3, description: "A priority that represents a task that is high.", color: "#fef2f2", textColor: "#dc2626" },
+  { name: "Blocker", value: 4, description: "A priority that represents a task that is blocked.", color: "#f0fdf4", textColor: "#16a34a" },
+  { name: "Critical", value: 5, description: "A priority that represents a task that is critical.", color: "#fef2f2", textColor: "#dc2626" },
 ];
 
 
@@ -233,19 +233,21 @@ function App() {
             {view === 'tickets' && <ListTickets />}
             {view === 'users' && <UserList />}
             {view === 'skills' && <ListSkills />}
+            {view === 'priorities' && <ListPriorities />}
             {view === 'qualifications' && <ListQualifications />}
             {view === 'locations' && <ListLocations />}
             {view === 'comments' && <ListComments />}
             {view === 'projects' && <ProjectList />}
             {view === 'dashboard' && <ProjectDashboard />}
+            {view === 'status' && <ListStatus />}
             {view === 'tags' && <ListTags />}
+            {view === 'ticketTypes' && <ListTicketType />}
             {view === 'logs' && <ListLogs />}
 
           </div>
         )
         }
       </UserContext.Provider>
-
     </Provider>
   );
 }

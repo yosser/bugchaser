@@ -271,7 +271,7 @@ export const TicketGrid = ({ onTicketClick, setShowViewTicket }: TicketGridProps
 
             {columnView === 'status' ? (
                 <div className="grid gap-4 p-4" style={{ gridTemplateColumns: `repeat(${statuses.length}, 1fr)` }}>
-                    {statuses.map((status) => (
+                    {[...statuses].sort((a, b) => a.value - b.value).map((status) => (
                         <StatusColumn
                             key={status._id}
                             status={status}
