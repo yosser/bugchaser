@@ -1,10 +1,11 @@
+export { Calendar } from './calendar';
 export { DropdownMenu } from './DropdownMenu';
-export { MainNav } from './MainNav';
 export { ListComments } from './comment/list';
-export { ListBugs } from './bug';
-export { UserList } from './user';
-export { ListUsers } from './user/list/ListUsers';
 export { ListLogs } from './log/list';
-export { ProjectList } from './project/list/ProjectList';
 export { ListTags } from './tag/list';
-export { ViewBug } from './bug/view';
+export { ListTickets } from './ticket';
+export { ListUsers } from './user/list/ListUsers';
+export { MainNav } from './MainNav';
+export { ProjectList } from './project/list/ProjectList';
+export { UserList } from './user';
+export { ViewTicket } from './ticket/view';

@@ -5,26 +5,27 @@ import { api } from "../../../../convex/_generated/api";
 import { DateTime } from "luxon";
 import { Comment } from "../grid/Comment";
 
-interface ViewBugProps {
-    bugId: Id<"bugs">;
-    onEdit?: (bug: Doc<"bugs">) => void;
+interface ViewTicketProps {
+    ticketId: Id<"tickets">;
+    onEdit?: (ticket: Doc<"tickets">) => void;
     onClose?: () => void;
 }
 
-export const ViewBug = ({ bugId, onEdit, onClose }: ViewBugProps) => {
-    const bug = useQuery(api.bugs.getById, { id: bugId });
+export const ViewTicket: React.FunctionComponent<ViewTicketProps> = ({ ticketId, onEdit, onClose }) => {
+    const ticket = useQuery(api.tickets.getById, { id: ticketId });
     const users = useQuery(api.users.get) ?? [];
     const statuses = useQuery(api.status.get) ?? [];
     const priorities = useQuery(api.priority.get) ?? [];
-    const comments = useQuery(api.comments.getByBug, { bugId }) ?? [];
+    const ticketTypes = useQuery(api.ticketType.get) ?? [];
+    const comments = useQuery(api.comments.getByTicket, { ticketId }) ?? [];
     const logs = useQuery(api.logs.get) ?? [];
-    const bugTags = useQuery(api.bugsTags.getByBug, { bugId }) ?? [];
+    const ticketTags = useQuery(api.ticketsTags.getByTicket, { ticketId }) ?? [];
     const tags = useQuery(api.tags.get) ?? [];
 
-    const assignedUser = users?.find(user => user._id === bug?.assignedTo);
-    const reporter = users?.find(user => user._id === bug?.reporter);
-    const status = statuses.find(s => s._id === bug?.status);
-    const priority = priorities.find(p => p._id === bug?.priority);
+    const assignedUser = users?.find(user => user._id === ticket?.assignedTo);
+    const reporter = users?.find(user => user._id === ticket?.reporter);
+    const status = statuses.find(s => s._id === ticket?.status);
+    const priority = priorities.find(p => p._id === ticket?.priority);
     const [showComments, setShowComments] = useState(false);
 
 
@@ -42,7 +43,7 @@ export const ViewBug = ({ bugId, onEdit, onClose }: ViewBugProps) => {
             case 5:
                 return 'bg-light-green-100 text-light-green-800';
             default:
-                return 'bg-gret-100 text-grey800';
+                return 'bg-grey-100 text-grey-800';
         }
     };
 
@@ -58,14 +59,14 @@ export const ViewBug = ({ bugId, onEdit, onClose }: ViewBugProps) => {
             case 4:
                 return 'bg-green-100 text-green-800';
             default:
-                return 'bg-gret-100 text-grey800';
+                return 'bg-grey-100 text-grey-800';
         }
     };
 
     const rootComments = comments.filter(c => !c.parentComment && !c.isDeleted);
 
-    const bugLogs = logs
-        .filter(log => log.bug === bugId)
+    const ticketLogs = logs
+        .filter(log => log.ticket === ticketId)
         .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
 
     const getActionIcon = (action: string) => {
@@ -109,7 +110,7 @@ export const ViewBug = ({ bugId, onEdit, onClose }: ViewBugProps) => {
         }
     };
 
-    if (!bug) {
+    if (!ticket) {
         return null;
     }
 
@@ -117,12 +118,12 @@ export const ViewBug = ({ bugId, onEdit, onClose }: ViewBugProps) => {
         <div className="bg-white rounded-lg p-8 w-full max-w-6xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-start mb-6">
                 <div className="flex-1">
-                    <h2 className="text-3xl font-bold text-gray-900 mb-2">{bug.title}</h2>
+                    <h2 className="text-3xl font-bold text-gray-900 mb-2">{ticket.title}</h2>
                     <div className="flex items-center space-x-4">
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColour(bug.status)}`}>
+                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColour(ticket.status)}`}>
                             {status?.name}
                         </span>
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${getPriorityColour(bug.priority)}`}>
+                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${getPriorityColour(ticket.priority)}`}>
                             {priority?.name}
                         </span>
                     </div>
@@ -130,9 +131,9 @@ export const ViewBug = ({ bugId, onEdit, onClose }: ViewBugProps) => {
                 <div className="flex space-x-3">
                     {onEdit && (
                         <button
-                            onClick={() => onEdit(bug)}
+                            onClick={() => onEdit(ticket)}
                             className="text-blue-600 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded p-2"
-                            title="Edit Bug"
+                            title="Edit Ticket"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
                                 <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
@@ -158,7 +159,7 @@ export const ViewBug = ({ bugId, onEdit, onClose }: ViewBugProps) => {
                 <div className="col-span-2 space-y-6">
                     <div className="bg-gray-50 rounded-lg p-6">
                         <h3 className="text-lg font-semibold text-gray-900 mb-3">Description</h3>
-                        <p className="text-gray-700 whitespace-pre-wrap">{bug.description}</p>
+                        <p className="text-gray-700 whitespace-pre-wrap">{ticket.description}</p>
                     </div>
 
                     <div className="bg-gray-50 rounded-lg p-6">
@@ -207,31 +208,43 @@ export const ViewBug = ({ bugId, onEdit, onClose }: ViewBugProps) => {
                             <div>
                                 <h4 className="text-sm font-medium text-gray-500">Created</h4>
                                 <p className="mt-1 text-gray-900">
-                                    {bug.createdAt ? DateTime.fromMillis(bug.createdAt).toFormat('MMM d, yyyy h:mm a') : 'N/A'}
+                                    {ticket.createdAt ? DateTime.fromMillis(ticket.createdAt).toFormat('MMM d, yyyy h:mm a') : 'N/A'}
                                 </p>
                             </div>
                             <div>
                                 <h4 className="text-sm font-medium text-gray-500">Last Updated</h4>
                                 <p className="mt-1 text-gray-900">
-                                    {bug.updatedAt ? DateTime.fromMillis(bug.updatedAt).toFormat('MMM d, yyyy h:mm a') : 'N/A'}
+                                    {ticket.updatedAt ? DateTime.fromMillis(ticket.updatedAt).toFormat('MMM d, yyyy h:mm a') : 'N/A'}
                                 </p>
                             </div>
+                            {ticket.dueDate && <div>
+                                <h4 className="text-sm font-medium text-gray-500">Due Date</h4>
+                                <p className="mt-1 text-gray-900">
+                                    {ticket.dueDate ? DateTime.fromMillis(ticket.dueDate).toFormat('MMM d, yyyy h:mm a') : 'N/A'}
+                                </p>
+                            </div>}
                             <div>
                                 <h4 className="text-sm font-medium text-gray-500 mb-2">Priority</h4>
-                                <span className={`px-3 py-1 text-sm font-medium rounded-full ${getPriorityColour(bug.priority)}`}>
+                                <span className={`px-3 py-1 text-sm font-medium rounded-full ${getPriorityColour(ticket.priority)}`}>
                                     {priority?.name}
+                                </span>
+                            </div>
+                            <div>
+                                <h4 className="text-sm font-medium text-gray-500 mb-2">Type</h4>
+                                <span className={`px-3 py-1 text-sm font-medium rounded-full bg-blue-100 text-blue-800`}>
+                                    {ticketTypes.find(t => t._id === ticket.type)?.name}
                                 </span>
                             </div>
 
                             <div>
                                 <h4 className="text-sm font-medium text-gray-500 mb-2">Tags</h4>
                                 <div className="flex flex-wrap gap-2">
-                                    {bugTags.map(bugTag => {
-                                        const tag = tags.find(t => t._id === bugTag.tag);
+                                    {ticketTags.map(ticketTag => {
+                                        const tag = tags.find(t => t._id === ticketTag.tag);
                                         if (!tag) return null;
                                         return (
                                             <span
-                                                key={bugTag._id}
+                                                key={ticketTag._id}
                                                 className="px-3 py-1 text-sm font-medium rounded-full bg-gray-100 text-gray-800 flex items-center"
                                                 style={{ backgroundColor: `${tag.color}20`, color: tag.color }}
                                             >
@@ -251,8 +264,8 @@ export const ViewBug = ({ bugId, onEdit, onClose }: ViewBugProps) => {
                     <div className="bg-gray-50 rounded-lg p-6">
                         <h3 className="text-lg font-semibold text-gray-900 mb-4">Activity History</h3>
                         <div className="space-y-4">
-                            {bugLogs.length > 0 ? (
-                                bugLogs.map((log) => (
+                            {ticketLogs.length > 0 ? (
+                                ticketLogs.map((log) => (
                                     <div key={log._id} className="flex items-start space-x-3">
                                         <div className="flex-shrink-0 mt-1">
                                             {getActionIcon(log.action)}

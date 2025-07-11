@@ -26,8 +26,8 @@ export const DropdownMenu: React.FunctionComponent<TDropdownMenuProps> = ({ opti
             </button>
         </div>
 
-        <div className="absolute left-0 bg-white mt-2 w-48 origin-top-right rounded-md bg-hvpd-grey-50 shadow-lg shadow-slate-700 ring-1 ring-black ring-opacity-5 focus:outline-none" role="menu" aria-orientation="vertical" aria-labelledby="menu-button" tabIndex={-1}>
-            <div className={`${isOpen ? '' : 'hidden'} py-1`} role="none">
+        <div className="absolute left-0 bg-white z-10 mt-2 w-48 origin-top-right rounded-md bg-hvpd-grey-50 shadow-lg shadow-slate-700 ring-1 ring-black ring-opacity-5 focus:outline-none" role="menu" aria-orientation="vertical" aria-labelledby="menu-button" tabIndex={-1}>
+            <div className={`${isOpen ? '' : 'hidden'} py-1 `} role="none">
                 {options.map((option) => (
                     <button type='button' key={`menu-${option.value}`} disabled={option.disabled} onClick={() => selectOption(option)} className="text-gray-700 bg-hvpd-grey-50 w-full text-left block px-4 py-2 text-sm hover:bg-gray-200 dark:hover:bg-gray-600 dark:hover:text-white disabled:text-hvpd-grey-400">{option.label}</button>
                 ))}

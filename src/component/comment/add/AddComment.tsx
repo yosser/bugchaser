@@ -7,11 +7,11 @@ import type { IUserContext } from "../../../context/userContext";
 
 interface AddCommentProps {
     onClose: () => void;
-    bugId?: Id<"bugs">;
+    ticketId?: Id<"tickets">;
     parentComment?: Doc<"comments">;
 }
 
-export const AddComment = ({ onClose, bugId, parentComment }: AddCommentProps) => {
+export const AddComment = ({ onClose, ticketId, parentComment }: AddCommentProps) => {
     const { currentUser } = useContext<IUserContext>(UserContext);
     const createComment = useMutation(api.comments.create);
     const createLog = useMutation(api.logs.create);
@@ -28,7 +28,7 @@ export const AddComment = ({ onClose, bugId, parentComment }: AddCommentProps) =
         try {
             const commentId = await createComment({
                 text: formData.text,
-                bug: bugId ?? parentComment?.bug ?? undefined,
+                ticket: ticketId ?? parentComment?.ticket ?? undefined,
                 user: currentUser._id,
                 parentComment: parentComment ? parentComment._id : undefined,
                 isReply: !!parentComment,
@@ -37,7 +37,7 @@ export const AddComment = ({ onClose, bugId, parentComment }: AddCommentProps) =
                 await createLog({
                     action: "Comment created",
                     user: currentUser?._id,
-                    bug: bugId,
+                    ticket: ticketId,
                     comment: commentId,
                 });
             }

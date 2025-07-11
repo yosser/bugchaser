@@ -8,10 +8,10 @@ export const get = query({
 });
 
 export const getFiltered = query({
-    args: { bugId: v.optional(v.id("bugs")), userId: v.optional(v.id("users")), commentId: v.optional(v.id("comments")) },
+    args: { ticketId: v.optional(v.id("tickets")), userId: v.optional(v.id("users")), commentId: v.optional(v.id("comments")) },
     handler: async (ctx, args) => {
         return await ctx.db.query("logs")
-            .filter((q) => args.bugId ? q.eq(q.field("bug"), args.bugId) : true)
+            .filter((q) => args.ticketId ? q.eq(q.field("ticket"), args.ticketId) : true)
             .filter((q) => args.userId ? q.eq(q.field("user"), args.userId) : true)
             .filter((q) => args.commentId ? q.eq(q.field("comment"), args.commentId) : true)
             .collect();
@@ -19,10 +19,10 @@ export const getFiltered = query({
 });
 
 
-export const getByBug = query({
-    args: { bugId: v.optional(v.id("bugs")) },
+export const getByTicket = query({
+    args: { ticketId: v.optional(v.id("tickets")) },
     handler: async (ctx, args) => {
-        return await ctx.db.query("logs").filter((q) => q.eq(q.field("bug"), args.bugId)).collect();
+        return await ctx.db.query("logs").filter((q) => q.eq(q.field("ticket"), args.ticketId)).collect();
     },
 });
 
@@ -45,7 +45,7 @@ export const create = mutation({
     args: {
         action: v.string(),
         user: v.optional(v.id("users")),
-        bug: v.optional(v.id("bugs")),
+        ticket: v.optional(v.id("tickets")),
         comment: v.optional(v.id("comments")),
     },
     handler: async (ctx, args) => {
@@ -62,7 +62,7 @@ export const update = mutation({
         id: v.id("logs"),
         action: v.string(),
         user: v.optional(v.id("users")),
-        bug: v.optional(v.id("bugs")),
+        ticket: v.optional(v.id("tickets")),
         comment: v.optional(v.id("comments")),
     },
     handler: async (ctx, args) => {
