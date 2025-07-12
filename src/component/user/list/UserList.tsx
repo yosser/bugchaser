@@ -1,12 +1,17 @@
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import type { Doc, Id } from "../../../../convex/_generated/dataModel";
+import { useAppDispatch as useDispatch } from "../../../hooks";
+import { addToast } from "../../../store";
 import { AddUser } from "../add/AddUser";
 import { EditUser } from "../edit/EditUser";
 import { ManageUserProjects } from "../project/ManageUserProjects";
+import { UserContext } from "../../../context/userContext";
 
 export const UserList = () => {
+    const dispatch = useDispatch();
+    const { currentUser } = useContext(UserContext);
     const users = useQuery(api.users.get);
     const roles = useQuery(api.roles.get);
     const removeUser = useMutation(api.users.remove);
@@ -14,10 +19,17 @@ export const UserList = () => {
     const [editingUser, setEditingUser] = useState<Doc<"users"> | null>(null);
     const [managingProjectsFor, setManagingProjectsFor] = useState<Id<"users"> | null>(null);
 
+    const createLog = useMutation(api.logs.create);
+
     const handleDelete = async (id: Id<"users">) => {
         if (window.confirm("Are you sure you want to delete this user?")) {
             try {
                 await removeUser({ id });
+                await createLog({
+                    action: `User ${users?.find(u => u._id === id)?.name} deleted`,
+                    user: currentUser?._id,
+                });
+                dispatch(addToast("User deleted"));
             } catch (error) {
                 console.error("Failed to delete user:", error);
             }

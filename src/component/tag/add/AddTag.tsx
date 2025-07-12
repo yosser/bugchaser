@@ -1,23 +1,33 @@
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { useMutation } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
+import { useAppDispatch as useDispatch } from "../../../hooks";
+import { addToast } from "../../../store";
+import { UserContext } from "../../../context/userContext";
 
 interface AddTagProps {
     onClose: () => void;
 }
 
 export const AddTag = ({ onClose }: AddTagProps) => {
+    const dispatch = useDispatch();
+    const { currentUser } = useContext(UserContext);
     const [formData, setFormData] = useState({
         name: "",
         color: "#3B82F6", // Default blue color
     });
 
     const createTag = useMutation(api.tags.create);
-
+    const createLog = useMutation(api.logs.create);
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
             await createTag(formData);
+            await createLog({
+                action: `Tag added ${formData.name}`,
+                user: currentUser?._id,
+            });
+            dispatch(addToast("Tag added"));
             onClose();
         } catch (error) {
             console.error("Failed to create tag:", error);

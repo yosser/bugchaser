@@ -12,12 +12,11 @@ interface IMonthCalendarProps {
 }
 
 export const MonthCalendar: React.FC<IMonthCalendarProps> = ({ onTicketClick }) => {
-    const { currentProject } = useContext(UserContext);
+    const { currentProject, currentEpic } = useContext(UserContext);
     const { currentDate, setCurrentDate, dateByViewMode } = useContext(CalendarContext);
-    const [selectedDate, setSelectedDate] = useState<Date>(currentDate);
     const [draggedTicket, setDraggedTicket] = useState<Doc<"tickets"> | null>(null);
     const [dragOverDate, setDragOverDate] = useState<Date | null>(null);
-    const tickets = useQuery(api.tickets.getByProject, { projectId: currentProject?._id });
+    const tickets = useQuery(api.tickets.getByProjectEpic, { projectId: currentProject?._id ?? undefined, epicId: currentEpic?._id ?? undefined });
     const updateTicket = useMutation(api.tickets.update);
 
     const daysInMonth = (date: Date) => {
@@ -28,7 +27,7 @@ export const MonthCalendar: React.FC<IMonthCalendarProps> = ({ onTicketClick }) 
         return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
     };
     const handleDayClick = (date: Date) => {
-        setSelectedDate(date);
+        setCurrentDate(date);
     };
 
     const handleDragStart = (e: React.DragEvent, ticket: Doc<"tickets">) => {
@@ -112,10 +111,7 @@ export const MonthCalendar: React.FC<IMonthCalendarProps> = ({ onTicketClick }) 
         for (let day = 1; day <= totalDays; day++) {
             const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
             //   const dayEvents = getEventsForDay(date);
-            const isSelected = selectedDate?.getDate() === day &&
-                selectedDate?.getMonth() === currentDate.getMonth() &&
-                selectedDate?.getFullYear() === currentDate.getFullYear();
-
+            const isSelected = currentDate?.getDate() === day;
 
 
             if (padCount % 7 === 0) {
@@ -129,7 +125,7 @@ export const MonthCalendar: React.FC<IMonthCalendarProps> = ({ onTicketClick }) 
             days.push(
                 <div
                     key={`day-${day}`}
-                    className={`border border-gray-200 min-h-20 rounded-md px-4 py-3 cursor-pointer text-sm colour-blue-500 relative overflow-hidden flex flex-col ${isSelected ? 'selected' : ''
+                    className={`border border-gray-200 min-h-20 rounded-md px-4 py-3 cursor-pointer text-sm colour-blue-500 relative overflow-hidden flex flex-col ${isSelected ? 'bg-blue-50' : ''
                         } hover:border-blue-500 ${isDragOver ? 'bg-green-50 border-green-300' : ''
                         }`}
                     onClick={() => handleDayClick(date)}

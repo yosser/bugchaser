@@ -13,8 +13,9 @@ import { ViewTicket } from "../view/ViewTicket";
 type ViewMode = "grid" | "list";
 
 export const ListTickets = () => {
-    const { currentProject } = useContext(UserContext);
-    const tickets = useQuery(api.tickets.getByProject, { projectId: currentProject?._id });
+    const { currentProject, currentEpic } = useContext(UserContext);
+    const tickets = useQuery(api.tickets.getByProjectEpic, { projectId: currentProject?._id ?? undefined, epicId: currentEpic?._id ?? undefined });
+
     const [showViewTicket, setShowViewTicket] = useState<Id<'tickets'> | null>(null);
     const [showAddTicket, setShowAddTicket] = useState(false);
     const [ticketToEdit, setTicketToEdit] = useState<Doc<"tickets"> | null>(null);
@@ -41,7 +42,7 @@ export const ListTickets = () => {
     return (
         <div className="p-4">
             <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-semibold">Tickets</h2>
+                <h2 className="text-2xl font-semibold">Tickets  {currentProject?.name ? `- ${currentProject.name}` : ""} {currentEpic?.name ? `- ${currentEpic.name}` : "- all jobs"}</h2>
                 <div className="flex items-center space-x-4">
                     <div className="flex items-center space-x-2 bg-gray-100 rounded-lg p-1">
                         <button

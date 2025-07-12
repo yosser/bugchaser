@@ -1,16 +1,21 @@
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import type { Doc, Id } from "../../../../convex/_generated/dataModel";
+import { useAppDispatch as useDispatch } from "../../../hooks";
+import { addToast } from "../../../store";
 import { EditComment } from "../edit";
 import { AddComment } from "../add";
 import { ConfirmationModal } from "../../common/ConfirmationModal";
+import { UserContext } from "../../../context/userContext";
 
 interface ListCommentsProps {
     ticketId?: Id<"tickets">;
 }
 
 export const ListComments = ({ ticketId }: ListCommentsProps) => {
+    const dispatch = useDispatch();
+    const { currentUser } = useContext(UserContext);
     const comments = useQuery(api.comments.get);
     const tickets = useQuery(api.tickets.get);
     const users = useQuery(api.users.get);
@@ -20,11 +25,17 @@ export const ListComments = ({ ticketId }: ListCommentsProps) => {
     const [error, setError] = useState<string | null>(null);
     const [commentToDelete, setCommentToDelete] = useState<Doc<"comments"> | null>(null);
     const deleteComment = useMutation(api.comments.remove);
+    const createLog = useMutation(api.logs.create);
 
     const handleDelete = async (commentId: Id<"comments">) => {
         try {
             setError(null);
             await deleteComment({ id: commentId });
+            await createLog({
+                action: `Comment deleted ${comments?.find(c => c._id === commentId)?.text}`,
+                user: currentUser?._id,
+            });
+            dispatch(addToast("Comment deleted"));
             setCommentToDelete(null);
         } catch (err) {
             setError(err instanceof Error ? err.message : "Failed to delete comment");

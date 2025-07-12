@@ -2,6 +2,8 @@ import { useContext, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
+import { useAppDispatch as useDispatch } from "../../../hooks";
+import { addToast } from "../../../store";
 import { UserContext } from "../../../context/userContext";
 import type { IUserContext } from "../../../context/userContext";
 
@@ -10,10 +12,12 @@ interface AddTicketProps {
 }
 
 export const AddTicket = ({ onClose }: AddTicketProps) => {
+    const dispatch = useDispatch();
     const { currentUser, currentProject } = useContext<IUserContext>(UserContext);
     const users = useQuery(api.users.get);
     const statuses = useQuery(api.status.get);
     const priorities = useQuery(api.priority.get);
+    const epics = useQuery(api.epics.get);
     const tags = useQuery(api.tags.get);
     const ticketTypes = useQuery(api.ticketType.get);
     const createTicket = useMutation(api.tickets.create);
@@ -26,8 +30,11 @@ export const AddTicket = ({ onClose }: AddTicketProps) => {
         status: statuses?.[0]?._id ?? "" as Id<"status">,
         priority: priorities?.[3]?._id ?? "" as Id<"priority">,
         type: ticketTypes?.[0]?._id ?? "" as Id<"ticketType">,
+        epic: epics?.[0]?._id ?? "" as Id<"epics">,
         reporter: currentUser?._id ?? "" as Id<"users">,
         assignedTo: currentUser?._id ?? "" as Id<"users">,
+        estimatedTimeHours: undefined,
+        actualTimeHours: undefined,
         dueDate: undefined,
     });
 
@@ -46,9 +53,12 @@ export const AddTicket = ({ onClose }: AddTicketProps) => {
                 priority: formData.priority,
                 reporter: formData.reporter,
                 assignedTo: formData.assignedTo,
+                epic: formData.epic.length > 0 ? (formData.epic as Id<"epics">) : undefined,
                 type: formData.type,
                 project: currentProject?._id ?? "" as Id<"projects">,
                 dueDate: formData.dueDate ? new Date(formData.dueDate).getTime() : undefined,
+                estimatedTimeHours: formData.estimatedTimeHours ? BigInt(formData.estimatedTimeHours) : undefined,
+                actualTimeHours: formData.actualTimeHours ? BigInt(formData.actualTimeHours) : undefined,
             });
 
             if (ticketId) {
@@ -65,6 +75,7 @@ export const AddTicket = ({ onClose }: AddTicketProps) => {
                     user: currentUser?._id,
                     ticket: ticketId,
                 });
+                dispatch(addToast("Ticket created"));
             }
             onClose();
         } catch (error) {
@@ -89,155 +100,201 @@ export const AddTicket = ({ onClose }: AddTicketProps) => {
 
     return (
         <div className="fixed inset-0 bg-gray-500/75 flex items-center justify-center">
-            <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <div className="bg-white rounded-lg p-6 w-full max-w-lg">
                 <h2 className="text-2xl font-semibold mb-6">Add Ticket</h2>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                        <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
-                            Title
-                        </label>
-                        <input
-                            type="text"
-                            id="title"
-                            name="title"
-                            value={formData.title}
-                            onChange={handleChange}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            required
-                        />
-                    </div>
+                <form onSubmit={handleSubmit} >
+                    <div className='space-y-2 max-h-96 overflow-y-auto px-1'>
+                        <div>
+                            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
+                                Title
+                            </label>
+                            <input
+                                type="text"
+                                id="title"
+                                name="title"
+                                value={formData.title}
+                                onChange={handleChange}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                required
+                            />
+                        </div>
 
-                    <div>
-                        <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-1">
-                            Type
-                        </label>
-                        <select
-                            id="type"
-                            name="type"
-                            value={formData.type}
-                            onChange={handleChange}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            required
-                        >{ticketTypes?.map((type) => (
-                            <option key={type._id} value={type._id}>
-                                {type.name}
-                            </option>
-                        ))}
-                        </select>
-                    </div>
-
-                    <div>
-                        <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-                            Description
-                        </label>
-                        <textarea
-                            id="description"
-                            name="description"
-                            value={formData.description}
-                            onChange={handleChange}
-                            rows={4}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            required
-                        />
-                    </div>
-
-                    <div>
-                        <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
-                            Status
-                        </label>
-                        <select
-                            id="status"
-                            name="status"
-                            value={formData.status}
-                            onChange={handleChange}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            required
-                        >
-                            {statuses?.map((status) => (
-                                <option key={status._id} value={status._id}>
-                                    {status.name}
+                        <div>
+                            <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-1">
+                                Type
+                            </label>
+                            <select
+                                id="type"
+                                name="type"
+                                value={formData.type}
+                                onChange={handleChange}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                required
+                            >{ticketTypes?.map((type) => (
+                                <option key={type._id} value={type._id}>
+                                    {type.name}
                                 </option>
                             ))}
-                        </select>
-                    </div>
+                            </select>
+                        </div>
 
-                    <div>
-                        <label htmlFor="priority" className="block text-sm font-medium text-gray-700 mb-1">
-                            Priority
-                        </label>
-                        <select
-                            id="priority"
-                            name="priority"
-                            value={formData.priority}
-                            onChange={handleChange}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            required
-                        >
-                            {priorities?.map((priority) => (
-                                <option key={priority._id} value={priority._id}>
-                                    {priority.name}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
+                        <div>
+                            <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+                                Description
+                            </label>
+                            <textarea
+                                id="description"
+                                name="description"
+                                value={formData.description}
+                                onChange={handleChange}
+                                rows={4}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                required
+                            />
+                        </div>
 
-                    <div>
-                        <label htmlFor="assignedTo" className="block text-sm font-medium text-gray-700 mb-1">
-                            Assigned To
-                        </label>
-                        <select
-                            id="assignedTo"
-                            name="assignedTo"
-                            value={formData.assignedTo}
-                            onChange={handleChange}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            required
-                        >
-                            {users?.map((user) => (
-                                <option key={user._id} value={user._id}>
-                                    {user.name}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-                    <div>
-                        <label htmlFor="dueDate" className="block text-sm font-medium text-gray-700 mb-1">
-                            Due Date
-                        </label>
-                        <input
-                            type="date"
-                            id="dueDate"
-                            name="dueDate"
-                            value={formData.dueDate}
-                            onChange={handleChange}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Tags
-                        </label>
-                        <div className="space-y-2">
-                            {tags?.map((tag) => (
-                                <label key={tag._id} className="flex items-center space-x-2">
-                                    <input
-                                        type="checkbox"
-                                        checked={selectedTags.includes(tag._id)}
-                                        onChange={() => handleTagChange(tag._id)}
-                                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                    />
-                                    <span className="flex items-center">
-                                        <span
-                                            className="w-3 h-3 rounded-full mr-2"
-                                            style={{ backgroundColor: tag.color ?? '#3B82F6' }}
+                        <div>
+                            <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
+                                Status
+                            </label>
+                            <select
+                                id="status"
+                                name="status"
+                                value={formData.status}
+                                onChange={handleChange}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                required
+                            >
+                                {statuses?.map((status) => (
+                                    <option key={status._id} value={status._id}>
+                                        {status.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label htmlFor="priority" className="block text-sm font-medium text-gray-700 mb-1">
+                                Priority
+                            </label>
+                            <select
+                                id="priority"
+                                name="priority"
+                                value={formData.priority}
+                                onChange={handleChange}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                required
+                            >
+                                {priorities?.map((priority) => (
+                                    <option key={priority._id} value={priority._id}>
+                                        {priority.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <label htmlFor="epic" className="block text-sm font-medium text-gray-700 mb-1">
+                                Epic
+                            </label>
+                            <select
+                                id="epic"
+                                name="epic"
+                                value={formData.epic}
+                                onChange={handleChange}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                                <option value="">Select Epic</option>
+                                {epics?.map((epic) => (
+                                    <option key={epic._id} value={epic._id}>
+                                        {epic.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label htmlFor="assignedTo" className="block text-sm font-medium text-gray-700 mb-1">
+                                Assigned To
+                            </label>
+                            <select
+                                id="assignedTo"
+                                name="assignedTo"
+                                value={formData.assignedTo}
+                                onChange={handleChange}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                required
+                            >
+                                {users?.map((user) => (
+                                    <option key={user._id} value={user._id}>
+                                        {user.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <label htmlFor="dueDate" className="block text-sm font-medium text-gray-700 mb-1">
+                                Due Date
+                            </label>
+                            <input
+                                type="date"
+                                id="dueDate"
+                                name="dueDate"
+                                value={formData.dueDate}
+                                onChange={handleChange}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                        </div>
+                        <div>
+                            <label htmlFor="estimatedTimeHours" className="block text-sm font-medium text-gray-700 mb-1">
+                                Estimated Time (hours)
+                            </label>
+                            <input
+                                type="number"
+                                id="estimatedTimeHours"
+                                name="estimatedTimeHours"
+                                value={formData.estimatedTimeHours ?? undefined}
+                                onChange={handleChange}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                        </div>
+                        <div>
+                            <label htmlFor="actualTimeHours" className="block text-sm font-medium text-gray-700 mb-1">
+                                Actual Time (hours)
+                            </label>
+                            <input
+                                type="number"
+                                id="actualTimeHours"
+                                name="actualTimeHours"
+                                value={formData.actualTimeHours ?? undefined}
+                                onChange={handleChange}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Tags
+                            </label>
+                            <div className="space-y-2">
+                                {tags?.map((tag) => (
+                                    <label key={tag._id} className="flex items-center space-x-2">
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedTags.includes(tag._id)}
+                                            onChange={() => handleTagChange(tag._id)}
+                                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                                         />
-                                        {tag.name}
-                                    </span>
-                                </label>
-                            ))}
+                                        <span className="flex items-center">
+                                            <span
+                                                className="w-3 h-3 rounded-full mr-2"
+                                                style={{ backgroundColor: tag.color ?? '#3B82F6' }}
+                                            />
+                                            {tag.name}
+                                        </span>
+                                    </label>
+                                ))}
+                            </div>
                         </div>
                     </div>
-
                     <div className="flex justify-end space-x-3 mt-6">
                         <button
                             type="button"

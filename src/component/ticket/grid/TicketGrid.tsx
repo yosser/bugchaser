@@ -1,16 +1,14 @@
-import { useContext, useState, useRef } from "react";
+import { useContext, useState } from "react";
 
 import { useQuery, useMutation } from "convex/react";
-import { DndProvider, useDrop } from 'react-dnd';
-import { HTML5Backend } from 'react-dnd-html5-backend';
-import { useDragRef } from "../../../hooks/hooks";
+import { useAppDispatch } from "../../../hooks/hooks";
 import { api } from "../../../../convex/_generated/api";
 import type { Doc, Id } from "../../../../convex/_generated/dataModel";
 import { TicketCard } from "./TicketCard";
 
 import { UserContext } from "../../../context/userContext";
 import type { IUserContext } from "../../../context/userContext";
-
+import { addToast } from "../../../store";
 
 interface TicketGridProps {
     onTicketClick?: (ticket: Doc<"tickets">) => void;
@@ -26,21 +24,28 @@ interface IAssignedToColumnProps {
 }
 
 const AssignedToColumn = ({ assignedTo, tickets, onTicketEdit, onDrop, setShowViewTicket }: IAssignedToColumnProps) => {
-    const [{ isOver }, drop] = useDrop(() => ({
-        accept: 'TICKET',
-        drop: (item: Doc<"tickets">) => {
-            onDrop(item, assignedTo._id);
-        },
-        collect: (monitor) => ({
-            isOver: monitor.isOver(),
-        }),
-    }));
-    const handleDropRef = useDragRef(drop);
+    const [isOver, setIsOver] = useState(false);
+    const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        setIsOver(true);
+    };
+    const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        setIsOver(false);
+    };
+    const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+        const ticket = JSON.parse(e.dataTransfer.getData('ticket'));
+        onDrop(ticket, assignedTo._id);
+        e.preventDefault();
+    };
     const columnTickets = tickets.filter(ticket => ticket.assignedTo === assignedTo._id);
 
-    return (<div ref={handleDropRef}
+    return (<div
         className={`p-4 rounded-lg ${isOver ? 'bg-gray-100' : 'bg-gray-50'
             }`}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
     >
         <h3 className="text-lg font-semibold mb-4">{assignedTo.name}</h3>
         <div className="space-y-4">
@@ -68,23 +73,28 @@ interface IPriorityColumnProps {
 }
 
 const PriorityColumn = ({ priority, tickets, onTicketEdit, onDrop, setShowViewTicket }: IPriorityColumnProps) => {
-    const dropRef = useRef<HTMLDivElement>(null);
-    const [{ isOver }, drop] = useDrop(() => ({
-        accept: 'TICKET',
-        drop: (item: Doc<"tickets">) => {
-            onDrop(item, priority._id);
-        },
-        collect: (monitor) => ({
-            isOver: monitor.isOver(),
-        }),
-    }));
-    drop(dropRef);
+    const [isOver, setIsOver] = useState(false);
+    const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        setIsOver(true);
+    };
+    const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        setIsOver(false);
+    };
+    const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+        const ticket = JSON.parse(e.dataTransfer.getData('ticket'));
+        onDrop(ticket, priority._id);
+        e.preventDefault();
+    };
 
     const columnTickets = tickets.filter(ticket => ticket.priority === priority._id);
 
     return (
         <div
-            ref={dropRef}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
             className={`p-4 rounded-lg ${isOver ? 'bg-gray-100' : 'bg-gray-50'
                 }`}
         >
@@ -114,24 +124,30 @@ interface IStatusColumnProps {
 }
 
 const StatusColumn = ({ status, tickets, onTicketEdit, onDrop, setShowViewTicket }: IStatusColumnProps) => {
-    const [{ isOver }, drop] = useDrop(() => ({
-        accept: 'TICKET',
-        drop: (item: Doc<"tickets">) => {
-            onDrop(item, status._id);
-        },
-        collect: (monitor) => ({
-            isOver: monitor.isOver(),
-        }),
-    }));
-    const handleDropRef = useDragRef(drop);
+    const [isOver, setIsOver] = useState(false);
 
     const columnTickets = tickets.filter(ticket => ticket.status === status._id);
+    const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+        setIsOver(true);
+        e.preventDefault();
+    };
+    const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+        setIsOver(false);
+        e.preventDefault();
+    };
+    const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+        const ticket = JSON.parse(e.dataTransfer.getData('ticket'));
+        onDrop(ticket, status._id);
+        e.preventDefault();
+    };
 
     return (
         <div
-            ref={handleDropRef}
-            className={`p-4 rounded-lg ${isOver ? 'bg-gray-100' : 'bg-gray-50'
-                }`}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+
+            className={`p-4 rounded-lg ${isOver ? 'bg-gray-100' : 'bg-gray-50'}`}
         >
             <h3 className="text-lg font-semibold mb-4">{status.name}</h3>
             <div className="space-y-4">
@@ -152,9 +168,10 @@ const StatusColumn = ({ status, tickets, onTicketEdit, onDrop, setShowViewTicket
 };
 
 export const TicketGrid = ({ onTicketClick, setShowViewTicket }: TicketGridProps) => {
-    const { currentUser, currentProject } = useContext<IUserContext>(UserContext);
+    const dispatch = useAppDispatch();
+    const { currentUser, currentProject, currentEpic } = useContext<IUserContext>(UserContext);
     const [columnView, setColumnView] = useState<'status' | 'priority' | 'assignedTo'>('assignedTo');
-    const tickets = useQuery(api.tickets.getByProject, { projectId: currentProject?._id });
+    const tickets = useQuery(api.tickets.getByProjectEpic, { projectId: currentProject?._id ?? undefined, epicId: currentEpic?._id ?? undefined });
     const users = useQuery(api.users.get);
     const statuses = useQuery(api.status.get);
     const priorities = useQuery(api.priority.get);
@@ -174,7 +191,7 @@ export const TicketGrid = ({ onTicketClick, setShowViewTicket }: TicketGridProps
                 user: currentUser?._id,
                 ticket: ticket._id,
             });
-
+            dispatch(addToast(`Ticket priority changed to ${priority?.name}`));
         } catch (error) {
             console.error('Failed to update ticket priority:', error);
         }
@@ -190,6 +207,7 @@ export const TicketGrid = ({ onTicketClick, setShowViewTicket }: TicketGridProps
                 user: currentUser?._id,
                 ticket: ticket._id,
             });
+            dispatch(addToast(`Ticket status changed to ${status?.name}`));
         } catch (error) {
             console.error('Failed to update ticket status:', error);
         }
@@ -205,6 +223,7 @@ export const TicketGrid = ({ onTicketClick, setShowViewTicket }: TicketGridProps
                 user: currentUser?._id,
                 ticket: ticket._id,
             });
+            dispatch(addToast(`Ticket assigned to ${assignedTo?.name}`));
         } catch (error) {
             console.error('Failed to update ticket assigned to:', error);
         }
@@ -215,83 +234,83 @@ export const TicketGrid = ({ onTicketClick, setShowViewTicket }: TicketGridProps
     }
 
     return (
-        <DndProvider backend={HTML5Backend}>
-            <div className="space-y-4">
-                <div className="flex items-center justify-end space-x-2 bg-white p-4 rounded-lg shadow-sm">
-                    <span className="text-sm font-medium text-gray-700">View by:</span>
-                    <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-1">
-                        <button
-                            onClick={() => setColumnView('status')}
-                            className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${columnView === 'status'
-                                ? 'bg-white text-gray-900 shadow-sm'
-                                : 'text-gray-500 hover:text-gray-700'
-                                }`}
-                        >
-                            Status
-                        </button>
-                        <button
-                            onClick={() => setColumnView('priority')}
-                            className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${columnView === 'priority'
-                                ? 'bg-white text-gray-900 shadow-sm'
-                                : 'text-gray-500 hover:text-gray-700'
-                                }`}
-                        >
-                            Priority
-                        </button>
-                        <button
-                            onClick={() => setColumnView('assignedTo')}
-                            className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${columnView === 'assignedTo'
-                                ? 'bg-white text-gray-900 shadow-sm'
-                                : 'text-gray-500 hover:text-gray-700'
-                                }`}
-                        >
-                            Assigned To
-                        </button>
-                    </div>
-                </div>
 
-                {columnView === 'status' ? (
-                    <div className="grid gap-4 p-4" style={{ gridTemplateColumns: `repeat(${statuses.length}, 1fr)` }}>
-                        {statuses.map((status) => (
-                            <StatusColumn
-                                key={status._id}
-                                status={status}
-                                tickets={tickets}
-                                onTicketEdit={onTicketClick}
-                                onDrop={handleDropStatus}
-                                setShowViewTicket={setShowViewTicket}
-                            />
-                        ))}
-                    </div>
-                ) : columnView === 'assignedTo' ? (
-                    <div className="grid gap-4 p-4" style={{ gridTemplateColumns: `repeat(${users.length}, 1fr)` }}>
-                        {users.map((user) => (
-                            <AssignedToColumn
-                                key={user._id}
-                                assignedTo={user}
-                                tickets={tickets}
-                                onTicketEdit={onTicketClick}
-                                onDrop={handleDropAssignedTo}
-                                setShowViewTicket={setShowViewTicket}
-                            />
-                        ))}
-                    </div>
-                ) : (
-                    <div className="grid gap-4 p-4" style={{ gridTemplateColumns: `repeat(${priorities.length}, 1fr)` }}>
-                        {priorities.map((priority) => (
-                            <PriorityColumn
-                                key={priority._id}
-                                priority={priority}
-                                tickets={tickets}
-                                onTicketEdit={onTicketClick}
-                                onDrop={handleDrop}
-                                setShowViewTicket={setShowViewTicket}
-                            />
-                        ))}
-                    </div>
-                )}
+        <div className="space-y-4">
+            <div className="flex items-center justify-end space-x-2 bg-white p-4 rounded-lg shadow-sm">
+                <span className="text-sm font-medium text-gray-700">View by:</span>
+                <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-1">
+                    <button
+                        onClick={() => setColumnView('status')}
+                        className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${columnView === 'status'
+                            ? 'bg-white text-gray-900 shadow-sm'
+                            : 'text-gray-500 hover:text-gray-700'
+                            }`}
+                    >
+                        Status
+                    </button>
+                    <button
+                        onClick={() => setColumnView('priority')}
+                        className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${columnView === 'priority'
+                            ? 'bg-white text-gray-900 shadow-sm'
+                            : 'text-gray-500 hover:text-gray-700'
+                            }`}
+                    >
+                        Priority
+                    </button>
+                    <button
+                        onClick={() => setColumnView('assignedTo')}
+                        className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${columnView === 'assignedTo'
+                            ? 'bg-white text-gray-900 shadow-sm'
+                            : 'text-gray-500 hover:text-gray-700'
+                            }`}
+                    >
+                        Assigned To
+                    </button>
+                </div>
             </div>
 
-        </DndProvider>
+            {columnView === 'status' ? (
+                <div className="grid gap-4 p-4" style={{ gridTemplateColumns: `repeat(${statuses.length}, 1fr)` }}>
+                    {[...statuses].sort((a, b) => a.value - b.value).map((status) => (
+                        <StatusColumn
+                            key={status._id}
+                            status={status}
+                            tickets={tickets}
+                            onTicketEdit={onTicketClick}
+                            onDrop={handleDropStatus}
+                            setShowViewTicket={setShowViewTicket}
+                        />
+                    ))}
+                </div>
+            ) : columnView === 'assignedTo' ? (
+                <div className="grid gap-4 p-4" style={{ gridTemplateColumns: `repeat(${users.length}, 1fr)` }}>
+                    {users.map((user) => (
+                        <AssignedToColumn
+                            key={user._id}
+                            assignedTo={user}
+                            tickets={tickets}
+                            onTicketEdit={onTicketClick}
+                            onDrop={handleDropAssignedTo}
+                            setShowViewTicket={setShowViewTicket}
+                        />
+                    ))}
+                </div>
+            ) : (
+                <div className="grid gap-4 p-4" style={{ gridTemplateColumns: `repeat(${priorities.length}, 1fr)` }}>
+                    {priorities.map((priority) => (
+                        <PriorityColumn
+                            key={priority._id}
+                            priority={priority}
+                            tickets={tickets}
+                            onTicketEdit={onTicketClick}
+                            onDrop={handleDrop}
+                            setShowViewTicket={setShowViewTicket}
+                        />
+                    ))}
+                </div>
+            )}
+        </div>
+
+
     );
 }; 

@@ -16,6 +16,7 @@ export const ViewTicket: React.FunctionComponent<ViewTicketProps> = ({ ticketId,
     const users = useQuery(api.users.get) ?? [];
     const statuses = useQuery(api.status.get) ?? [];
     const priorities = useQuery(api.priority.get) ?? [];
+    const epics = useQuery(api.epics.get) ?? [];
     const ticketTypes = useQuery(api.ticketType.get) ?? [];
     const comments = useQuery(api.comments.getByTicket, { ticketId }) ?? [];
     const logs = useQuery(api.logs.get) ?? [];
@@ -29,38 +30,28 @@ export const ViewTicket: React.FunctionComponent<ViewTicketProps> = ({ ticketId,
     const [showComments, setShowComments] = useState(false);
 
 
-    const getStatusColour = (statusId: Id<"status">) => {
-        const statusValue = statuses.find(s => s._id === statusId)?.value;
-        switch (statusValue) {
-            case 1:
-                return 'bg-green-100 text-green-800';
-            case 2:
-                return 'bg-blue-100 text-blue-800';
-            case 3:
-                return 'bg-light-blue-100 text-light-blue-800';
-            case 4:
-                return 'bg-red-100 text-red-800';
-            case 5:
-                return 'bg-light-green-100 text-light-green-800';
-            default:
-                return 'bg-grey-100 text-grey-800';
+    const getStatusColour = (statusId: Id<"status">): React.CSSProperties => {
+        const statusValue = statuses.find(s => s._id === statusId);
+        if (!statusValue) {
+            return { backgroundColor: '#f8fafc', color: '#888a8c' };
         }
+        return { backgroundColor: statusValue.colour, color: statusValue.textColour };
     };
 
-    const getPriorityColour = (priorityId: Id<"priority">) => {
-        const priorityValue = priorities.find(p => p._id === priorityId)?.value;
-        switch (priorityValue) {
-            case 1:
-                return 'bg-red-100 text-red-800';
-            case 2:
-                return 'bg-orange-100 text-orange-800';
-            case 3:
-                return 'bg-yellow-100 text-yellow-800';
-            case 4:
-                return 'bg-green-100 text-green-800';
-            default:
-                return 'bg-grey-100 text-grey-800';
+    const getPriorityColour = (priorityId: Id<"priority">): React.CSSProperties => {
+        const priorityValue = priorities.find(p => p._id === priorityId);
+        if (!priorityValue) {
+            return { backgroundColor: '#f8fafc', color: '#888a8c' };
         }
+        return { backgroundColor: priorityValue.colour, color: priorityValue.textColour };
+    };
+
+    const getTicketTypeColour = (ticketTypeId: Id<"ticketType">): React.CSSProperties => {
+        const ticketTypeValue = ticketTypes.find(t => t._id === ticketTypeId);
+        if (!ticketTypeValue) {
+            return { backgroundColor: '#f8fafc', color: '#888a8c' };
+        }
+        return { backgroundColor: ticketTypeValue.colour, color: ticketTypeValue.textColour };
     };
 
     const rootComments = comments.filter(c => !c.parentComment && !c.isDeleted);
@@ -120,11 +111,8 @@ export const ViewTicket: React.FunctionComponent<ViewTicketProps> = ({ ticketId,
                 <div className="flex-1">
                     <h2 className="text-3xl font-bold text-gray-900 mb-2">{ticket.title}</h2>
                     <div className="flex items-center space-x-4">
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColour(ticket.status)}`}>
-                            {status?.name}
-                        </span>
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${getPriorityColour(ticket.priority)}`}>
-                            {priority?.name}
+                        <span className={`px-3 py-1 rounded-full text-md font-medium `}>
+                            {epics.find(e => e._id === ticket.epic)?.name}
                         </span>
                     </div>
                 </div>
@@ -207,33 +195,44 @@ export const ViewTicket: React.FunctionComponent<ViewTicketProps> = ({ ticketId,
                             </div>
                             <div>
                                 <h4 className="text-sm font-medium text-gray-500">Created</h4>
-                                <p className="mt-1 text-gray-900">
+                                <p className="mt-1 text-gray-900 text-xs">
                                     {ticket.createdAt ? DateTime.fromMillis(ticket.createdAt).toFormat('MMM d, yyyy h:mm a') : 'N/A'}
                                 </p>
                             </div>
                             <div>
                                 <h4 className="text-sm font-medium text-gray-500">Last Updated</h4>
-                                <p className="mt-1 text-gray-900">
+                                <p className="mt-1 text-gray-900 text-xs">
                                     {ticket.updatedAt ? DateTime.fromMillis(ticket.updatedAt).toFormat('MMM d, yyyy h:mm a') : 'N/A'}
                                 </p>
                             </div>
                             {ticket.dueDate && <div>
                                 <h4 className="text-sm font-medium text-gray-500">Due Date</h4>
-                                <p className="mt-1 text-gray-900">
+                                <p className="mt-1 text-gray-900 text-xs">
                                     {ticket.dueDate ? DateTime.fromMillis(ticket.dueDate).toFormat('MMM d, yyyy h:mm a') : 'N/A'}
                                 </p>
                             </div>}
-                            <div>
-                                <h4 className="text-sm font-medium text-gray-500 mb-2">Priority</h4>
-                                <span className={`px-3 py-1 text-sm font-medium rounded-full ${getPriorityColour(ticket.priority)}`}>
-                                    {priority?.name}
-                                </span>
+                            <div className="flex items-center space-x-2">
+                                <div className="flex flex-col">
+                                    <h4 className="text-sm font-medium text-gray-500 mb-2">Status</h4>
+                                    <span className='px-3 py-1 text-sm font-medium rounded-full' style={getStatusColour(ticket.status)}>
+                                        {status?.name}
+                                    </span>
+                                </div>
+                                <div className="flex flex-col">
+                                    <h4 className="text-sm font-medium text-gray-500 mb-2">Priority</h4>
+                                    <span className='px-3 py-1 text-sm font-medium rounded-full' style={getPriorityColour(ticket.priority)}>
+                                        {priority?.name}
+                                    </span>
+                                </div>
+                                <div className="flex flex-col">
+                                    <h4 className="text-sm font-medium text-gray-500 mb-2">Type</h4>
+                                    <span className='px-3 py-1 text-sm font-medium rounded-full' style={getTicketTypeColour(ticket.type)}>
+                                        {ticketTypes.find(t => t._id === ticket.type)?.name}
+                                    </span>
+                                </div>
                             </div>
                             <div>
-                                <h4 className="text-sm font-medium text-gray-500 mb-2">Type</h4>
-                                <span className={`px-3 py-1 text-sm font-medium rounded-full bg-blue-100 text-blue-800`}>
-                                    {ticketTypes.find(t => t._id === ticket.type)?.name}
-                                </span>
+
                             </div>
 
                             <div>

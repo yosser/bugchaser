@@ -8,6 +8,25 @@ export const get = query({
     },
 });
 
+export const getById = query({
+    args: {
+        id: v.id("users"),
+    },
+    handler: async (ctx, args) => {
+        const user = await ctx.db.get(args.id);
+        const qualifications = await ctx.db.query("qualificationsUsers").withIndex("by_user", (q) => q.eq("user", args.id)).collect();
+        const skills = await ctx.db.query("skillsUsers").withIndex("by_user", (q) => q.eq("user", args.id)).collect();
+        const locations = await ctx.db.query("locationsUsers").withIndex("by_user", (q) => q.eq("user", args.id)).collect();
+
+        return {
+            ...user,
+            qualifications,
+            skills,
+            locations,
+        };
+    },
+});
+
 export const update = mutation({
     args: {
         id: v.id("users"),

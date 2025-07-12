@@ -2,6 +2,8 @@ import { useState, useContext } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import type { Id, Doc } from "../../../../convex/_generated/dataModel";
+import { useAppDispatch as useDispatch } from "../../../hooks";
+import { addToast } from "../../../store";
 import { AddTicket } from "../add/AddTicket.tsx";
 
 import { UserContext } from "../../../context/userContext";
@@ -12,23 +14,55 @@ interface TicketListProps {
 }
 
 export const TicketList: React.FunctionComponent<TicketListProps> = ({ onViewTicket, onEditTicket }) => {
-    const { currentProject } = useContext(UserContext);
-    const tickets = useQuery(api.tickets.getByProject, { projectId: currentProject?._id });
+    const dispatch = useDispatch();
+    const { currentProject, currentEpic, currentUser } = useContext(UserContext);
+    const tickets = useQuery(api.tickets.getByProjectEpic, { projectId: currentProject?._id ?? undefined, epicId: currentEpic?._id ?? undefined });
+    const epics = useQuery(api.epics.get);
     const users = useQuery(api.users.get);
     const statuses = useQuery(api.status.get);
     const priorities = useQuery(api.priority.get);
     const ticketTypes = useQuery(api.ticketType.get);
     const removeTicket = useMutation(api.tickets.remove);
+    const createLog = useMutation(api.logs.create);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
     if (!currentProject) {
         return <div className="p-4 text-gray-500">Please select a project to view tickets.</div>;
     }
 
+    const getStatusColour = (statusId: Id<"status">): React.CSSProperties => {
+        const statusValue = (statuses ?? []).find(s => s._id === statusId);
+        if (!statusValue) {
+            return { backgroundColor: '#f8fafc', color: '#888a8c' };
+        }
+        return { backgroundColor: statusValue.colour, color: statusValue.textColour };
+    };
+
+    const getPriorityColour = (priorityId: Id<"priority">): React.CSSProperties => {
+        const priorityValue = (priorities ?? []).find(p => p._id === priorityId);
+        if (!priorityValue) {
+            return { backgroundColor: '#f8fafc', color: '#888a8c' };
+        }
+        return { backgroundColor: priorityValue.colour, color: priorityValue.textColour };
+    };
+
+    const getTicketTypeColour = (ticketTypeId: Id<"ticketType">): React.CSSProperties => {
+        const ticketTypeValue = (ticketTypes ?? []).find(t => t._id === ticketTypeId);
+        if (!ticketTypeValue) {
+            return { backgroundColor: '#f8fafc', color: '#888a8c' };
+        }
+        return { backgroundColor: ticketTypeValue.colour, color: ticketTypeValue.textColour };
+    };
     const handleDelete = async (id: Id<"tickets">) => {
         if (window.confirm("Are you sure you want to delete this ticket?")) {
             try {
                 await removeTicket({ id });
+                await createLog({
+                    action: "Ticket deleted",
+                    user: currentUser?._id,
+                    ticket: id,
+                });
+                dispatch(addToast("Ticket deleted"));
             } catch (error) {
                 console.error("Failed to delete ticket:", error);
             }
@@ -36,17 +70,7 @@ export const TicketList: React.FunctionComponent<TicketListProps> = ({ onViewTic
     };
 
     return (
-        <div className="container mx-auto px-4 py-8">
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold text-gray-900">Tickets</h1>
-                <button
-                    onClick={() => setIsAddModalOpen(true)}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                    Add Ticket
-                </button>
-            </div>
-
+        <div className="container mx-auto px-4 py-4">
             <div className="bg-white shadow-md rounded-lg overflow-hidden">
                 <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
@@ -62,6 +86,9 @@ export const TicketList: React.FunctionComponent<TicketListProps> = ({ onViewTic
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Priority
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Epic
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Assigned To
@@ -81,13 +108,16 @@ export const TicketList: React.FunctionComponent<TicketListProps> = ({ onViewTic
                                     <div className="text-sm font-medium text-gray-900">{ticket.title}</div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className="text-sm text-gray-500">{ticketTypes?.find(t => t._id === ticket.type)?.name}</div>
+                                    <div className="px-2 py-1 text-xs font-medium rounded-full" style={getTicketTypeColour(ticket.type)}>{ticketTypes?.find(t => t._id === ticket.type)?.name}</div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className="text-sm text-gray-500">{statuses?.find(s => s._id === ticket.status)?.name}</div>
+                                    <div className="px-2 py-1 text-xs font-medium rounded-full" style={getStatusColour(ticket.status)}>{statuses?.find(s => s._id === ticket.status)?.name}</div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className="text-sm text-gray-500">{priorities?.find(p => p._id === ticket.priority)?.name}</div>
+                                    <div className="px-2 py-1 text-xs font-medium rounded-full" style={getPriorityColour(ticket.priority)}>{priorities?.find(p => p._id === ticket.priority)?.name}</div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                    <div className="text-sm text-gray-500">{epics?.find(e => e._id === ticket.epic)?.name}</div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <div className="text-sm text-gray-500">{users?.find(u => u._id === ticket.assignedTo)?.name}</div>
